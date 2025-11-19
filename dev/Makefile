@@ -68,3 +68,7 @@ endif
 # Include main makefile:
 #---------------------------------------------------------------------------------------------------------------------
 include $(LIBBUTANOABS)/butano.mak
+
+# Run mGBA automatically
+all:
+	mgba "$(TARGET).gba"
