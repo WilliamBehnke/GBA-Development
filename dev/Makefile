@@ -69,6 +69,6 @@ endif
 #---------------------------------------------------------------------------------------------------------------------
 include $(LIBBUTANOABS)/butano.mak
 
-# Run mGBA automatically
-all:
+# Run mGBA
+run: all
 	mgba "$(TARGET).gba"
