@@ -1,20 +1,17 @@
 #ifndef PLAYER_H
 #define PLAYER_H
 
-#include "CharacterSprite.h"
+#include "Entity.h"
+#include "BaseSprite.h"
 
-// Player: handles input, movement, and high-level state,
-// but delegates all visual / animation details to CharacterSprite.
-class Player
+class Player : public Entity
 {
 public:
-    explicit Player(CharacterSprite& sprite);
+    Player(BaseSprite* sprite);
 
-    // Called once per frame
     void update();
 
 private:
-    CharacterSprite& _sprite;
     direction _facing;
 };
 

@@ -1,73 +1,41 @@
 #ifndef SNAKE_SPRITE_H
 #define SNAKE_SPRITE_H
 
-#include "bn_sprite_ptr.h"
-#include "bn_fixed_point.h"
-#include "bn_sprite_animate_actions.h"
-#include "bn_optional.h"
-
+#include "BaseSprite.h"
 #include "bn_sprite_items_snake.h"
-#include "CharacterSprite.h"
 
-// Snake sprite that uses a sheet with:
-//   - 1 idle frame / direction
-//   - 4 walk frames / direction
-//   - 4 attack frames / direction
-//   - 3 hurt frames / direction
-// Layout order for each block: UP, RIGHT, LEFT, DOWN.
-class SnakeSprite : public CharacterSprite
+#define IDLE(base)  { { base, base }, 2, 12, true }
+#define WALK(base)  { { base, base + 1, base + 2, base + 3 }, 4, 6, true }
+#define HURT(base)  { { base, base + 1, base + 2 }, 3, 6, false }
+#define DEATH(base) { { base, base + 1, base + 2, base + 3 }, 4, 6, false }
+#define ATK(base)   \
+    {{ \
+        { { base, base + 1, base + 2, base + 3 }, 4, 6, false } \
+    }}
+
+#define DIR(IDLE_BLOCK, WALK_BLOCK, HURT_BLOCK, DEATH_BLOCK, ATK_BLOCK) \
+    { IDLE_BLOCK, WALK_BLOCK, HURT_BLOCK, DEATH_BLOCK, ATK_BLOCK }
+
+
+class SnakeSprite : public BaseSprite
 {
 public:
-    explicit SnakeSprite(const bn::fixed_point& spawn_pos);
-
-    // Position ---------------------------------------------------------
-    [[nodiscard]] bn::fixed_point position() const override;
-    void set_position(const bn::fixed_point& pos) override;
-
-    // Animation state --------------------------------------------------
-    void set_idle(direction dir) override;
-    void set_walk(direction dir) override;
-    void start_hurt(direction dir) override;
-    void start_attack(direction dir) override;
-
-    [[nodiscard]] bool is_attacking() const override;
-    [[nodiscard]] bool is_hurt() const override;
-
-    // Per-frame update: handles patrol + animations.
-    void update() override;
+    SnakeSprite(int x, int y) :
+        BaseSprite(
+            bn::sprite_items::snake.tiles_item(),
+            bn::sprite_items::snake.create_sprite(x, y),
+            _anim_data,
+            1
+        )
+    {}
 
 private:
-    enum class State
-    {
-        Idle,
-        Walk,
-        Attack,
-        Hurt
-    };
-
-    // Internal helpers -------------------------------------------------
-    static int _direction_index(direction dir);   // UP, RIGHT, LEFT, DOWN -> 0..3
-
-    // NOTE: Butano requires MaxSize > 1, so idle uses <2> and repeats the same frame.
-    bn::sprite_animate_action<2>  _make_idle_anim(direction facing);
-    bn::sprite_animate_action<4>  _make_walk_anim(direction facing);
-    bn::sprite_animate_action<4>  _make_attack_anim(direction facing);
-    bn::sprite_animate_action<3>  _make_hurt_anim(direction facing);
-
-    bn::sprite_ptr _sprite;
-    bn::sprite_tiles_item _tiles;
-
-    State _state;
-    direction _dir;
-
-    // Simple patrol logic
-    bn::fixed _speed;
-    int _horizontal_dir;          // +1 = right, -1 = left
-
-    bn::optional<bn::sprite_animate_action<2>> _idle_anim;
-    bn::optional<bn::sprite_animate_action<4>> _walk_anim;
-    bn::optional<bn::sprite_animate_action<4>> _attack_anim;
-    bn::optional<bn::sprite_animate_action<3>> _hurt_anim;
+    static constexpr bn::array<DirectionSet, 4> _anim_data = {{
+        DIR(IDLE(0), WALK(4),  HURT(36), DEATH(48), ATK(20)),
+        DIR(IDLE(1), WALK(8),  HURT(39), DEATH(48), ATK(24)),
+        DIR(IDLE(2), WALK(12), HURT(42), DEATH(48), ATK(28)),
+        DIR(IDLE(3), WALK(16), HURT(45), DEATH(48), ATK(32))
+    }};
 };
 
 #endif // SNAKE_SPRITE_H
