@@ -1,11 +1,10 @@
 #ifndef PLAYER_H
 #define PLAYER_H
 
-#include "Entity.h"
-#include "BaseSprite.h"
+#include "entity/Entity.h"
+#include "sprite/BaseSprite.h"
 
-class Player : public Entity
-{
+class Player : public Entity {
 public:
     Player(BaseSprite* sprite);
 

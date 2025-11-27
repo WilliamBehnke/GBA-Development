@@ -5,12 +5,12 @@
 
 #include "common_fixed_8x8_sprite_font.h"
 
-#include "Player.h"
-#include "Enemy.h"
-#include "GokuSprite.h"
-#include "SnakeSprite.h"
-#include "DamageNumbers.h"
-#include "EntityManager.h"
+#include "entity/Player.h"
+#include "entity/Enemy.h"
+#include "entity/EntityManager.h"
+#include "sprite/GokuSprite.h"
+#include "sprite/SnakeSprite.h"
+#include "ui/DamageNumbers.h"
 
 int main()
 {
@@ -37,15 +37,7 @@ int main()
     Enemy enemy2(&snake2);
     enemy2.set_target(&player);
 
-    // --------------------------------------------------
-    // Entity manager setup
-    //   args: player ptr, player_attack_damage,
-    //         enemy_attack_damage, enemy_bump_damage
-    // --------------------------------------------------
-    EntityManager entity_manager(&player,
-                                 2,  // player attack damage
-                                 1,  // enemy attack damage
-                                 0); // enemy bump damage (off for now)
+    EntityManager entity_manager(&player);
 
     entity_manager.add_enemy(&enemy1);
     entity_manager.add_enemy(&enemy2);

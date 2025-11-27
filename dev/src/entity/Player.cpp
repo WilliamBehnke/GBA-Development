@@ -3,81 +3,68 @@
 #include "bn_math.h"
 #include "bn_fixed_point.h"
 
-namespace
-{
+namespace {
     constexpr bn::fixed k_speed = 1.5;
     constexpr bn::fixed k_half_width  = 120;
     constexpr bn::fixed k_half_height = 80;
 
-    void clamp_to_bounds(bn::fixed_point& pos)
-    {
-        if(pos.x() < -k_half_width)
+    void clamp_to_bounds(bn::fixed_point& pos) {
+        if(pos.x() < -k_half_width) {
             pos.set_x(-k_half_width);
-        else if(pos.x() > k_half_width)
+        } else if(pos.x() > k_half_width) {
             pos.set_x(k_half_width);
+        }
 
-        if(pos.y() < -k_half_height)
+        if(pos.y() < -k_half_height) {
             pos.set_y(-k_half_height);
-        else if(pos.y() > k_half_height)
+        } else if(pos.y() > k_half_height) {
             pos.set_y(k_half_height);
+        }
     }
 }
 
 Player::Player(BaseSprite* sprite) :
     Entity(
-        sprite,
-        5,                              // max health
-        Hitbox(0, 0, 8, 8),             // hurt box
-        Hitbox(0, 0, 8, 8)              // attack box (offset adjusted per frame)
+        sprite, 5, 2, Hitbox(0, 0, 8, 8), Hitbox(0, 0, 8, 8)
     ),
     _facing(direction::DOWN)
 {}
 
-void Player::update()
-{
-    // If sprite is locked in attack/hurt, just update animations
-    if(_sprite->is_locked())
-    {
+void Player::update() {
+    if(_sprite->is_locked()) {
         Entity::update();
         return;
     }
 
-    // --- input & movement (your existing logic, trimmed) ---
     bn::fixed dx = 0;
     bn::fixed dy = 0;
     bool moving = false;
 
-    if(bn::keypad::left_held())
-    {
+    if(bn::keypad::left_held()) {
         dx -= k_speed;
         moving = true;
         _facing = direction::LEFT;
     }
-    if(bn::keypad::right_held())
-    {
+    if(bn::keypad::right_held()) {
         dx += k_speed;
         moving = true;
         _facing = direction::RIGHT;
     }
-    if(bn::keypad::up_held())
-    {
+    if(bn::keypad::up_held()) {
         dy -= k_speed;
         moving = true;
         _facing = direction::UP;
     }
-    if(bn::keypad::down_held())
-    {
+    if(bn::keypad::down_held()) {
         dy += k_speed;
         moving = true;
         _facing = direction::DOWN;
     }
 
     // Normalize diagonal
-    if(moving && (dx != 0 || dy != 0))
-    {
+    if(moving && (dx != 0 || dy != 0)) {
         const bn::fixed len = bn::sqrt(dx * dx + dy * dy);
-        if(len != 0)
-        {
+        if(len != 0) {
             dx = (dx / len) * k_speed;
             dy = (dy / len) * k_speed;
         }
@@ -89,21 +76,11 @@ void Player::update()
     clamp_to_bounds(pos);
     _sprite->sprite().set_position(pos);
 
-    // Attack / hurt triggers
-    if(bn::keypad::a_pressed())
-    {
+    if(bn::keypad::a_pressed()) {
         _sprite->play_attack();
-    }
-    else if(bn::keypad::b_pressed())
-    {
-        _sprite->play_hurt();
-    }
-    else if(moving)
-    {
+    } else if(moving) {
         _sprite->play_walk(_facing);
-    }
-    else
-    {
+    } else {
         _sprite->play_idle();
     }
 

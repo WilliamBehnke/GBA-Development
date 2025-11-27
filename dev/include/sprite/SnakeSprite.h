@@ -1,7 +1,7 @@
 #ifndef SNAKE_SPRITE_H
 #define SNAKE_SPRITE_H
 
-#include "BaseSprite.h"
+#include "sprite/BaseSprite.h"
 #include "bn_sprite_items_snake.h"
 
 #define IDLE(base)  { { base, base }, 2, 12, true }

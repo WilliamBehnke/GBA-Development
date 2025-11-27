@@ -1,7 +1,7 @@
 #ifndef GOKU_SPRITE_H
 #define GOKU_SPRITE_H
 
-#include "BaseSprite.h"
+#include "sprite/BaseSprite.h"
 #include "bn_sprite_items_goku.h"
 
 #define IDLE1(main)               IDLE10(main, main)
