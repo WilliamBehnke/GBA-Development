@@ -17,8 +17,7 @@
     { IDLE_BLOCK, WALK_BLOCK, HURT_BLOCK, DEATH_BLOCK, ATK_BLOCK }
 
 
-class SnakeSprite : public BaseSprite
-{
+class SnakeSprite : public BaseSprite {
 public:
     SnakeSprite(int x, int y) :
         BaseSprite(

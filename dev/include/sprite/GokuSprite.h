@@ -13,7 +13,7 @@
 
 #define WALK(base) { { base, base + 1, base + 2, base + 3 }, 4, 6, true }
 #define HURT(base) { { base, base + 1, base + 2, base + 3 }, 4, 6, false }
-#define DEATH(base) { { base, base + 1, base + 2, base + 3 }, 4, 6, false, true }
+#define DEATH(base) { { base, base + 1, base + 2, base + 3 }, 4, 10, false, true }
 #define ATK(a,b,c) \
     {{ \
         { { a, a + 1, a + 2, a + 3 }, 4, 6, false }, \
@@ -25,8 +25,7 @@
     { IDLE_BLOCK, WALK_BLOCK, HURT_BLOCK, DEATH_BLOCK, ATK_BLOCK }
 
 
-class GokuSprite : public BaseSprite
-{
+class GokuSprite : public BaseSprite {
 public:
     GokuSprite(int x, int y) :
         BaseSprite(

@@ -103,6 +103,11 @@ void Player::update() {
             _attack_box.offset_x = 8;
             _attack_box.offset_y = 0;
             break;
+        default:
+            // Fallback in case _facing ever has an unexpected value
+            _attack_box.offset_x = 0;
+            _attack_box.offset_y = 0;
+            break;
     }
 
     Entity::update();

@@ -8,9 +8,9 @@ BaseSprite::BaseSprite(const bn::sprite_tiles_item& tiles_item,
                        bn::sprite_ptr sprite,
                        const bn::array<DirectionSet, 4>& anim_data,
                        int attack_variants) :
+    _data(anim_data),
     _tiles_item(tiles_item),
     _sprite(bn::move(sprite)),
-    _data(anim_data),
     _attack_variants(attack_variants > 0 ? attack_variants : 1) {
     if(_attack_variants > MaxAttackVariants) {
         _attack_variants = MaxAttackVariants;

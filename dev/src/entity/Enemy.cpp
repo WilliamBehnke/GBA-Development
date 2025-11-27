@@ -13,10 +13,10 @@ Enemy::Enemy(BaseSprite* sprite) :
     ),
     _velocity(ZERO_VELOCITY),
     _max_speed(0.7),
-    _aggro_radius(50),         // start chasing
-    _lose_radius(100),         // give up chase
+    _aggro_radius(50),
+    _lose_radius(100),
     _attack_cooldown(0),
-    _attack_cooldown_max(0)    // adjust as needed
+    _attack_cooldown_max(30)
 {}
 
 void Enemy::update() {
