@@ -4,6 +4,7 @@
 #include "entity/Hitbox.h"
 #include "sprite/BaseSprite.h"
 #include "ui/DamageNumbers.h"
+#include "ui/HealthBar.h"
 
 #include "bn_fixed_point.h"
 #include "bn_fixed.h"
@@ -55,6 +56,9 @@ protected:
     int _health     = 0;
     int _max_health = 0;
     int _damage     = 1;
+
+    bool _show_health_bar = true;
+    HealthBar _health_bar;
 
     Hitbox _hurt_box;
     Hitbox _attack_box;

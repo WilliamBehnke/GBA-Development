@@ -28,7 +28,17 @@ void Entity::update() {
 
         // Y-sort: bigger Y = closer to camera (on top)
         bn::fixed_point pos = _sprite->sprite().position();
-        _sprite->sprite().set_z_order(-pos.y().integer());
+        int z = -pos.y().integer();
+
+        _sprite->sprite().set_z_order(z);
+
+        if(_show_health_bar && _health > 0) {
+            _health_bar.update(
+                pos, _health, _max_health, z
+            );
+        } else {
+            _health_bar.hide();
+        }
     }
 
     _tick_invulnerability();
