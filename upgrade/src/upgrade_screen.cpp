@@ -242,8 +242,9 @@ void UpgradeScreen::_update_cursor_position()
     // 3) Apply camera to node sprites
     // ------------------------------------------------------
 
-    // (Leave background alone so it stays static)
-    // _bg.set_position(0, 0);
+    // Scroll the 512x512 background with the camera.
+    // If the direction feels inverted, flip the signs.
+    _bg.set_position(-_camera.x().integer(), -_camera.y().integer());
 
     _apply_camera_to_nodes();
 
