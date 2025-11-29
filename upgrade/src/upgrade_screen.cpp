@@ -172,37 +172,89 @@ void UpgradeScreen::_update_cursor_position()
 {
     const UpgradeNode& node = _graph.node(_selected_index);
 
-    // Move camera to follow the selected node
-    _camera = node.grid_pos;
+    // ------------------------------------------------------
+    // 1) Adjust camera only when cursor nears screen edges
+    // ------------------------------------------------------
 
-    // Clamp camera so we don't scroll outside the 512x512 area
+    // Screen is 240x160 => half sizes:
+    constexpr bn::fixed screen_half_w = 120;
+    constexpr bn::fixed screen_half_h = 80;
+
+    // Dead-zone margins: inside this box we don't move the camera.
+    // Tweak these to taste (bigger margin = less camera movement).
+    constexpr bn::fixed margin_x = 60;   // horizontal safe zone
+    constexpr bn::fixed margin_y = 40;   // vertical safe zone
+
+    // Current screen position of the selected node with the *old* camera:
+    bn::fixed_point screen = _world_to_screen(node.grid_pos);
+
+    bn::fixed new_cam_x = _camera.x();
+    bn::fixed new_cam_y = _camera.y();
+
+    // Right edge
+    bn::fixed right_limit = screen_half_w - margin_x;
+    if(screen.x() > right_limit)
     {
-        // Map is 512x512 => half-size 256
-        constexpr bn::fixed map_half = 256;
-        // Screen is 240x160 => half sizes 120, 80
-        constexpr bn::fixed screen_half_w = 120;
-        constexpr bn::fixed screen_half_h = 80;
-
-        bn::fixed min_x = -map_half + screen_half_w;
-        bn::fixed max_x =  map_half - screen_half_w;
-        bn::fixed min_y = -map_half + screen_half_h;
-        bn::fixed max_y =  map_half - screen_half_h;
-
-        _camera.set_x(bn::clamp(_camera.x(), min_x, max_x));
-        _camera.set_y(bn::clamp(_camera.y(), min_y, max_y));
+        // Shift camera so node is back at right_limit
+        bn::fixed delta = screen.x() - right_limit;
+        new_cam_x += delta;
+    }
+    // Left edge
+    bn::fixed left_limit = -screen_half_w + margin_x;
+    if(screen.x() < left_limit)
+    {
+        bn::fixed delta = screen.x() - left_limit;
+        new_cam_x += delta;
     }
 
-    // Scroll the 512x512 background with the camera.
-    // If the scroll direction feels inverted, flip the signs here.
-    _bg.set_position(-_camera.x().integer(), -_camera.y().integer());
+    // Bottom edge
+    bn::fixed bottom_limit = screen_half_h - margin_y;
+    if(screen.y() > bottom_limit)
+    {
+        bn::fixed delta = screen.y() - bottom_limit;
+        new_cam_y += delta;
+    }
+    // Top edge
+    bn::fixed top_limit = -screen_half_h + margin_y;
+    if(screen.y() < top_limit)
+    {
+        bn::fixed delta = screen.y() - top_limit;
+        new_cam_y += delta;
+    }
 
-    // Reposition all node sprites based on the new camera
+    // ------------------------------------------------------
+    // 2) Clamp camera to 512x512 map bounds
+    // ------------------------------------------------------
+
+    constexpr bn::fixed map_half = 256;        // 512 / 2
+    bn::fixed min_x = -map_half + screen_half_w;
+    bn::fixed max_x =  map_half - screen_half_w;
+    bn::fixed min_y = -map_half + screen_half_h;
+    bn::fixed max_y =  map_half - screen_half_h;
+
+    new_cam_x = bn::clamp(new_cam_x, min_x, max_x);
+    new_cam_y = bn::clamp(new_cam_y, min_y, max_y);
+
+    _camera.set_x(new_cam_x);
+    _camera.set_y(new_cam_y);
+
+    // ------------------------------------------------------
+    // 3) Apply camera to node sprites
+    // ------------------------------------------------------
+
+    // (Leave background alone so it stays static)
+    // _bg.set_position(0, 0);
+
     _apply_camera_to_nodes();
 
-    // Position cursor in screen space
-    bn::fixed_point screen = _world_to_screen(node.grid_pos);
+    // Recompute node screen position using the updated camera:
+    screen = _world_to_screen(node.grid_pos);
     int x = screen.x().integer();
     int y = screen.y().integer();
+
+    // ------------------------------------------------------
+    // 4) Cursor: 16x16 vs 24x24
+    // ------------------------------------------------------
 
     if(node.is_ability_slot)
     {
