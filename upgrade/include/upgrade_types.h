@@ -18,23 +18,30 @@ enum class UpgradeType
     HpUp,
     AttackUp,
     DefenseUp,
-    SpeedUp,
-    AbilitySlot
+    Ability,        // active ability tile
 };
 
 struct UpgradeNode
 {
     int id = -1;
 
-    // Logical layout position (for drawing & debugging)
+    // Here we treat grid_pos as SCREEN PIXELS (x, y),
+    // not "grid units". You hardcode these in create_default.
     bn::fixed_point grid_pos;
 
+    // The tile currently placed in this slot (None = empty)
     UpgradeType type = UpgradeType::None;
 
-    bool unlocked  = false;
-    bool available = false;
+    // Path / progression flags:
+    bool unlocked  = false;   // this node has been activated (tile placed here)
+    bool available = false;   // reachable by path logic (neighbors of unlocked nodes)
 
-    // Neighbors by direction: store node IDs, or -1 if none
+    // Slot metadata:
+    bool is_ability_slot = false;   // only accepts Ability tiles
+    bool is_cursed       = false;   // starts cursed
+    bool curse_cleared   = false;   // true once curse is removed using an item
+
+    // Neighbor IDs: North, East, South, West
     int neighbors[4] = { -1, -1, -1, -1 };
 
     int neighbor_id(NeighborDir dir) const
