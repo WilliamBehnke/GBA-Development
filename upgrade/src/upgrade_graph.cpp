@@ -229,10 +229,10 @@ UpgradeGraph UpgradeGraph::create_default()
     // Compute availability based on unlocked + neighbours
     // ---------------------------------------------------------------------
 
-    graph.update_availability();
-
     // Core starting node:
-    n0.available = true;
+    n0.root = true;
+
+    graph.update_availability();
 
     return graph;
 }
@@ -324,6 +324,10 @@ void UpgradeGraph::update_availability()
                     _nodes[ni].available = true;
                 }
             }
+        }
+        else if (node.root)
+        {
+            node.available = true;
         }
     }
 }

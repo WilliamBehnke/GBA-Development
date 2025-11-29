@@ -35,6 +35,7 @@ struct UpgradeNode
     // Path / progression flags:
     bool unlocked  = false;   // this node has been activated (tile placed here)
     bool available = false;   // reachable by path logic (neighbors of unlocked nodes)
+    bool root      = false;   // start of a path
 
     // Slot metadata:
     bool is_ability_slot = false;   // only accepts Ability tiles
