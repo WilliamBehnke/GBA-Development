@@ -34,6 +34,8 @@ public:
     // Call once per frame from main loop
     void update();
 
+    bool done() const { return _done; }
+
     const CharacterAppearance& appearance() const
     {
         return _appearance;
@@ -82,6 +84,8 @@ private:
     bn::vector<bn::sprite_ptr, 64>  _option_sprites;  // grid & tab visuals
 
     bn::optional<bn::sprite_ptr> _player_border;
+
+    bool _done = false;
 };
 
 #endif // CUSTOMIZATION_SCREEN_H

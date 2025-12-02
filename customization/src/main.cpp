@@ -8,24 +8,44 @@
 #include "bn_color.h"
 
 #include "customization_screen.h"
+#include "player.h"
 
 int main()
 {
     bn::core::init();
 
-    // Optional: Set transparent/background color
+    // Set a neutral background
     bn::bg_palettes::set_transparent_color(bn::color(10, 10, 10));
 
-    CustomizationScreen customization_screen;
+    // -----------------------------
+    // 1) Character customization
+    // -----------------------------
+    CharacterAppearance appearance;
+
+    {
+        CustomizationScreen customization;
+
+        while(!customization.done())
+        {
+            customization.update();
+            bn::core::update();
+        }
+
+        // Grab chosen appearance
+        appearance = customization.appearance();
+    }
+
+    // -----------------------------
+    // 2) In-game world with player
+    // -----------------------------
+    // Start at center of screen
+    Player player(appearance, bn::fixed_point(0, 0));
 
     while(true)
     {
-        customization_screen.update();
-
-        // Later:
-        // if(A pressed) -> grab customization_screen.appearance()
-        // and pass that into your Player entity / game state.
-
+        player.update();
         bn::core::update();
     }
+
+    return 0;
 }

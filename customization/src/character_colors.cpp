@@ -69,6 +69,20 @@ namespace
             bn::color( 8, 12, 24),
             bn::color(12, 18, 30)
         },
+        // Purple
+        {
+            bn::color(10,  2, 12),
+            bn::color(14,  4, 18),
+            bn::color(20,  8, 26),
+            bn::color(28, 12, 30)
+        },
+        // Cyan
+        {
+            bn::color(2, 12, 14),
+            bn::color(4, 18, 22),
+            bn::color(8, 24, 30),
+            bn::color(12, 30, 31)
+        },
     };
 
     int wrap_index(int index, int count)

@@ -12,9 +12,8 @@
 
 namespace
 {
-    // 2 idle frames per direction, 4 directions = 8 frames total
-    constexpr int k_idle_frame_count   = 2;
-    constexpr int k_anim_wait_updates  = 16;  // lower = faster animation
+    constexpr int k_frame_count       = 6;
+    constexpr int k_anim_wait_updates = 16;  // lower = faster animation
 
     int _direction_row(FacingDirection dir)
     {
@@ -89,7 +88,7 @@ void CharacterPreview::set_scale(int scale)
 void CharacterPreview::_rebuild_layers()
 {
     int row        = _direction_row(_direction);
-    int base_frame = row * k_idle_frame_count;   // 0, 2, 4, 6
+    int base_frame = row * k_frame_count;
 
     auto setup_layer = [&](const bn::sprite_item* item,
                            bn::optional<bn::sprite_ptr>& sprite,

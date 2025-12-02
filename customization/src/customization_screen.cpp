@@ -256,6 +256,13 @@ void CustomizationScreen::_handle_input()
     {
         _refresh_ui();
     }
+
+    // Submit character
+    if(bn::keypad::start_pressed())
+    {
+        _done = true;
+        return;
+    }
 }
 
 // ---------------------------------------------------------------------------
@@ -283,29 +290,92 @@ void CustomizationScreen::_move_selection(int drow, int dcol)
     int row = index / cols;
     int col = index % cols;
 
-    row += drow;
-    col += dcol;
+    // Special behaviour for horizontal movement
+    if(dcol > 0 && drow == 0)             // move RIGHT
+    {
+        ++col;
 
-    // Wrap rows
-    if(row < 0)
-        row = rows - 1;
-    if(row >= rows)
-        row = 0;
+        int new_index = row * cols + col;
 
-    // Wrap columns
-    if(col < 0)
-        col = cols - 1;
-    if(col >= cols)
-        col = 0;
+        // If we stepped past the end of the row or past option_count:
+        if(col >= cols || new_index >= option_count)
+        {
+            int next_row = row + 1;
+            int first_next_index = next_row * cols;
+
+            // If next row exists and has at least one item, go to its first
+            if(first_next_index < option_count)
+            {
+                row = next_row;
+                col = 0;
+            }
+            else
+            {
+                // No further rows: wrap to very first item
+                row = 0;
+                col = 0;
+            }
+        }
+    }
+    else if(dcol < 0 && drow == 0)        // move LEFT
+    {
+        if(col > 0)
+        {
+            --col;
+        }
+        else
+        {
+            if(row > 0)
+            {
+                // Go to the last valid item of the previous row
+                --row;
+                int last_index_prev_row = (row + 1) * cols - 1;
+                if(last_index_prev_row >= option_count)
+                {
+                    last_index_prev_row = option_count - 1;
+                }
+
+                row = last_index_prev_row / cols;
+                col = last_index_prev_row % cols;
+            }
+            else
+            {
+                // From first item, wrap to last item overall
+                int last_index = option_count - 1;
+                row = last_index / cols;
+                col = last_index % cols;
+            }
+        }
+    }
+    else
+    {
+        // Vertical (or diagonal) movement: keep it simple & clamped
+        row += drow;
+        if(row < 0)
+            row = 0;
+        if(row >= rows)
+            row = rows - 1;
+
+        col += dcol;
+        if(col < 0)
+            col = 0;
+        if(col >= cols)
+            col = cols - 1;
+
+        // Clamp to last valid index if this cell is "empty"
+        int tmp_index = row * cols + col;
+        if(tmp_index >= option_count)
+        {
+            tmp_index = option_count - 1;
+            row = tmp_index / cols;
+            col = tmp_index % cols;
+        }
+    }
 
     int new_index = row * cols + col;
-
-    new_index = wrap_index(new_index, option_count);
-
     if(new_index < 0 || new_index >= option_count)
     {
-        // If the new slot is "empty", do nothing.
-        return;
+        return;    // safety net
     }
 
     index = new_index;
