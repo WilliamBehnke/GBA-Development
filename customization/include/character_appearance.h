@@ -10,8 +10,8 @@ enum class FacingDirection : int
 {
     Down  = 0,
     Right = 1,
-    Left  = 2,
-    Up    = 3
+    Up    = 2,
+    Left  = 3
 };
 
 struct CharacterAppearance
