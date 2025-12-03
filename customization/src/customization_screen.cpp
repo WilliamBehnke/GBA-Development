@@ -1,31 +1,21 @@
 #include "customization_screen.h"
-
-#include "bn_keypad.h"
-#include "bn_string.h"
-
 #include "character_colors.h"
-
-#include "bn_sprite_items_icon_border.h"
-#include "bn_sprite_items_character_border.h"
-
 #include "character_assets.h"
 
-// ---------------------------------------------------------------------------
-// Ctor + lifecycle
-// ---------------------------------------------------------------------------
+#include "bn_keypad.h"
 
-CustomizationScreen::CustomizationScreen() : _preview(bn::fixed_point(-80, 0))
+
+CustomizationScreen::CustomizationScreen() :
+    _preview(bn::fixed_point(-80, 0))
 {
-    _appearance.hair_index      = 0;
-    _appearance.top_index       = 0;
-    _appearance.bottom_index    = 0;
+    const CharacterAppearance& a = _model.appearance();
+
+    _model.mark_style_dirty();
+    _model.mark_colors_dirty();
 
     _apply_to_preview();
-    _preview.set_direction(_appearance.direction);
-    _preview.apply_colors(_appearance);
-
-    _player_border = bn::sprite_items::character_border.create_sprite(-80, 0);
-    _player_border->set_z_order(5);
+    _preview.set_direction(a.direction);
+    _preview.apply_colors(a);
 
     _refresh_ui();
 }
@@ -37,10 +27,6 @@ void CustomizationScreen::update()
     _preview.update();
 }
 
-// ---------------------------------------------------------------------------
-// Input
-// ---------------------------------------------------------------------------
-
 void CustomizationScreen::_handle_input()
 {
     bool ui_needs_refresh = false;
@@ -48,21 +34,19 @@ void CustomizationScreen::_handle_input()
     // Bumpers switch tabs
     if(bn::keypad::l_pressed())
     {
-        _tabs.move(-1);
+        _menu.move_tab(-1);
         ui_needs_refresh = true;
     }
     else if(bn::keypad::r_pressed())
     {
-        _tabs.move(1);
+        _menu.move_tab(1);
         ui_needs_refresh = true;
     }
 
-    // D-pad moves selection in the current tab grid
-    CustomizationTab tab = _tabs.current_tab();
-
     auto handle_move = [&](int drow, int dcol)
     {
-        bool changed = CustomizationSelectionGrid::move_selection(tab, _appearance, drow, dcol);
+        bool changed = _menu.move_selection(_model.appearance(), drow, dcol);
+
         if(!changed)
         {
             return;
@@ -70,16 +54,17 @@ void CustomizationScreen::_handle_input()
 
         ui_needs_refresh = true;
 
-        if(CustomizationSelectionGrid::is_style_tab(tab))
+        if(_menu.is_style_tab())
         {
-            _mark_style_sprites_dirty();
+            _model.mark_style_dirty();
         }
-        else if(CustomizationSelectionGrid::is_color_tab(tab))
+        else if(_menu.is_color_tab())
         {
-            _preview.apply_colors(_appearance);
+            _model.mark_colors_dirty();
         }
     };
 
+    // D-pad moves selection in the current tab grid
     if(bn::keypad::left_pressed())
     {
         handle_move(0, -1);
@@ -104,7 +89,7 @@ void CustomizationScreen::_handle_input()
     }
     else if(bn::keypad::b_pressed())
     {
-        _rotate_character(-1);   // -1 mod 4
+        _rotate_character(-1);
     }
 
     if(ui_needs_refresh)
@@ -118,86 +103,50 @@ void CustomizationScreen::_handle_input()
     }
 }
 
-// ---------------------------------------------------------------------------
-
 void CustomizationScreen::_rotate_character(int delta_steps)
 {
-    int d = static_cast<int>(_appearance.direction);
+    CharacterAppearance& a = _model.appearance();
+
+    int d = static_cast<int>(a.direction);
     d = (d + delta_steps + 4) % 4;
-    _appearance.direction = static_cast<FacingDirection>(d);
+    a.direction = static_cast<FacingDirection>(d);
 
-    _preview.set_direction(_appearance.direction);
+    _preview.set_direction(a.direction);
     _preview.set_scale(2);
-    _preview.apply_colors(_appearance);
-}
-
-// ---------------------------------------------------------------------------
-// Preview application
-// ---------------------------------------------------------------------------
-
-void CustomizationScreen::_mark_style_sprites_dirty()
-{
-    _last_hair_index      = -1;
-    _last_top_index       = -1;
-    _last_bottom_index    = -1;
+    _preview.apply_colors(a);
 }
 
 void CustomizationScreen::_apply_to_preview()
 {
-    const bool indices_changed =
-        _appearance.hair_index      != _last_hair_index      ||
-        _appearance.top_index       != _last_top_index       ||
-        _appearance.bottom_index    != _last_bottom_index;
+    const CharacterAppearance& a = appearance();
 
-    const bool colors_changed =
-        !_last_body_color   || _appearance.body_color   != *_last_body_color   ||
-        !_last_hair_color   || _appearance.hair_color   != *_last_hair_color   ||
-        !_last_eyes_color   || _appearance.eyes_color   != *_last_eyes_color   ||
-        !_last_top_color    || _appearance.top_color    != *_last_top_color    ||
-        !_last_bottom_color || _appearance.bottom_color != *_last_bottom_color;
-
-    if(!indices_changed && !colors_changed)
+    if(!_model.style_dirty() && !_model.colors_dirty())
     {
         return;
     }
 
-    if(indices_changed)
+    if(_model.style_dirty())
     {
-        _last_hair_index      = _appearance.hair_index;
-        _last_top_index       = _appearance.top_index;
-        _last_bottom_index    = _appearance.bottom_index;
-
         const bn::sprite_item* body   = k_body_type_options[0];
-        const bn::sprite_item* hair   = k_hair_options[_appearance.hair_index];
+        const bn::sprite_item* hair   = k_hair_options[a.hair_index];
         const bn::sprite_item* eyes   = k_eyes_options[0];
-        const bn::sprite_item* top    = k_top_options[_appearance.top_index];
-        const bn::sprite_item* bottom = k_bottom_options[_appearance.bottom_index];
+        const bn::sprite_item* top    = k_top_options[a.top_index];
+        const bn::sprite_item* bottom = k_bottom_options[a.bottom_index];
 
         _preview.set_layers(body, eyes, top, bottom, hair);
     }
 
-    if(colors_changed || indices_changed)
+    if(_model.style_dirty() || _model.colors_dirty())
     {
-        _last_body_color   = _appearance.body_color;
-        _last_hair_color   = _appearance.hair_color;
-        _last_eyes_color   = _appearance.eyes_color;
-        _last_top_color    = _appearance.top_color;
-        _last_bottom_color = _appearance.bottom_color;
-
-        _preview.apply_colors(_appearance);
+        _preview.apply_colors(a);
     }
 
     _preview.set_scale(2);
-}
 
-// ---------------------------------------------------------------------------
-// UI rendering
-// ---------------------------------------------------------------------------
+    _model.clear_dirty();
+}
 
 void CustomizationScreen::_refresh_ui()
 {
-    _option_sprites.clear();
-
-    _tabs.draw(_option_sprites);
-    CustomizationSelectionGrid::draw(_tabs.current_tab(), _appearance, _option_sprites);
+    _menu.draw(appearance());
 }

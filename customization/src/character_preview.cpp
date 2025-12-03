@@ -3,14 +3,18 @@
 // ---------------------------------------------------------------------------
 
 #include "character_preview.h"
+#include "character_colors.h"
 
 #include "bn_sprite_item.h"
 #include "bn_sprite_animate_actions.h"
 #include "bn_sprite_palette_ptr.h"
+#include "bn_sprite_items_character_border.h"
 
-#include "character_colors.h"
-
-CharacterPreview::CharacterPreview(const bn::fixed_point& pos) : _pos(pos) {}
+CharacterPreview::CharacterPreview(const bn::fixed_point& pos) : 
+    _pos(pos), _border(bn::sprite_items::character_border.create_sprite(pos))
+{
+    if(_border) _border->set_z_order(5);
+}
 
 void CharacterPreview::set_direction(FacingDirection dir)
 {
@@ -101,8 +105,6 @@ void CharacterPreview::set_position(const bn::fixed_point& pos)
     _sync_sprites();
 }
 
-// ---------------------------------------------------------------------------
-
 void CharacterPreview::_rebuild_sprites()
 {
     if(_body_item)
@@ -118,7 +120,7 @@ void CharacterPreview::_rebuild_sprites()
     if(_top_item)
     {
         _top_sprite = _top_item->create_sprite(_pos);
-        _hair_sprite->set_z_order(2);
+        _top_sprite->set_z_order(2);
     }
     if(_bottom_item)
     {
@@ -128,10 +130,9 @@ void CharacterPreview::_rebuild_sprites()
     if(_hair_item)
     {
         _hair_sprite = _hair_item->create_sprite(_pos);
-        _top_sprite->set_z_order(0);
+        _hair_sprite->set_z_order(0);
     }
 }
-
 
 void CharacterPreview::_sync_sprites()
 {
@@ -162,8 +163,6 @@ void CharacterPreview::_sync_sprites()
     if(_hair_sprite && _hair_item)
         _hair_sprite->set_tiles(_hair_item->tiles_item(), frame_index);
 }
-
-// ---------------------------------------------------------------------------
 
 void CharacterPreview::update()
 {

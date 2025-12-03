@@ -47,6 +47,8 @@ private:
     bn::optional<bn::sprite_ptr> _bottom_sprite;
     bn::optional<bn::sprite_ptr> _hair_sprite;
 
+    bn::optional<bn::sprite_ptr> _border;
+
     // Sprite items (so we can set tiles each frame)
     const bn::sprite_item* _body_item   = nullptr;
     const bn::sprite_item* _eyes_item   = nullptr;
