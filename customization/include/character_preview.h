@@ -7,8 +7,6 @@
 // and applies palette-based color ramps.
 // ---------------------------------------------------------------------------
 
-#pragma once
-
 #include "bn_fixed_point.h"
 #include "bn_optional.h"
 #include "bn_sprite_ptr.h"

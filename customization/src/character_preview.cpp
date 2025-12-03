@@ -10,31 +10,12 @@
 
 #include "character_colors.h"
 
-namespace
-{
-    void apply_ramp_to_palette(const ColorRamp& ramp, bn::sprite_palette_ptr& pal)
-    {
-        pal.set_color(1, ramp.c0);
-        pal.set_color(2, ramp.c1);
-        pal.set_color(3, ramp.c2);
-        pal.set_color(4, ramp.c3);
-    }
-}
-
-CharacterPreview::CharacterPreview(const bn::fixed_point& pos) :
-    _pos(pos)
-{
-    // Sprites will be created on first set_layers call
-}
-
-// ---------------------------------------------------------------------------
+CharacterPreview::CharacterPreview(const bn::fixed_point& pos) : _pos(pos) {}
 
 void CharacterPreview::set_direction(FacingDirection dir)
 {
     _direction = dir;
 }
-
-// ---------------------------------------------------------------------------
 
 void CharacterPreview::set_layers(const bn::sprite_item* body,
                                   const bn::sprite_item* eyes,
@@ -52,52 +33,43 @@ void CharacterPreview::set_layers(const bn::sprite_item* body,
     _sync_sprites();
 }
 
-// ---------------------------------------------------------------------------
-
 void CharacterPreview::apply_colors(const CharacterAppearance& appearance)
 {
-    // Body (skin)
     if(_body_sprite)
     {
         bn::sprite_palette_ptr pal = _body_sprite->palette();
-        const ColorRamp& ramp = get_skin_ramp(appearance.body_color_index);
-        apply_ramp_to_palette(ramp, pal);
+        const ColorRamp& ramp = get_skin_ramp(appearance.body_color);
+        ramp.apply_ramp_to_palette(pal);
     }
 
-    // Hair
     if(_hair_sprite)
     {
         bn::sprite_palette_ptr pal = _hair_sprite->palette();
-        const ColorRamp& ramp = get_feature_ramp(appearance.hair_color_index);
-        apply_ramp_to_palette(ramp, pal);
+        const ColorRamp& ramp = get_feature_ramp(appearance.hair_color);
+        ramp.apply_ramp_to_palette(pal);
     }
 
-    // Eyes
     if(_eyes_sprite)
     {
         bn::sprite_palette_ptr pal = _eyes_sprite->palette();
-        const ColorRamp& ramp = get_feature_ramp(appearance.eyes_color_index);
-        apply_ramp_to_palette(ramp, pal);
+        const ColorRamp& ramp = get_feature_ramp(appearance.eyes_color);
+        ramp.apply_ramp_to_palette(pal);
     }
 
-    // Top
     if(_top_sprite)
     {
         bn::sprite_palette_ptr pal = _top_sprite->palette();
-        const ColorRamp& ramp = get_feature_ramp(appearance.top_color_index);
-        apply_ramp_to_palette(ramp, pal);
+        const ColorRamp& ramp = get_feature_ramp(appearance.top_color);
+        ramp.apply_ramp_to_palette(pal);
     }
 
-    // Bottom
     if(_bottom_sprite)
     {
         bn::sprite_palette_ptr pal = _bottom_sprite->palette();
-        const ColorRamp& ramp = get_feature_ramp(appearance.bottom_color_index);
-        apply_ramp_to_palette(ramp, pal);
+        const ColorRamp& ramp = get_feature_ramp(appearance.bottom_color);
+        ramp.apply_ramp_to_palette(pal);
     }
 }
-
-// ---------------------------------------------------------------------------
 
 void CharacterPreview::set_scale(int scale)
 {
@@ -123,8 +95,6 @@ void CharacterPreview::set_scale(int scale)
     }
 }
 
-// ---------------------------------------------------------------------------
-
 void CharacterPreview::set_position(const bn::fixed_point& pos)
 {
     _pos = pos;
@@ -135,36 +105,33 @@ void CharacterPreview::set_position(const bn::fixed_point& pos)
 
 void CharacterPreview::_rebuild_sprites()
 {
-    // Destroy old sprites by overwriting optionals
     if(_body_item)
     {
         _body_sprite = _body_item->create_sprite(_pos);
+        _body_sprite->set_z_order(4);
     }
     if(_eyes_item)
     {
         _eyes_sprite = _eyes_item->create_sprite(_pos);
+        _eyes_sprite->set_z_order(3);
     }
     if(_top_item)
     {
         _top_sprite = _top_item->create_sprite(_pos);
+        _hair_sprite->set_z_order(2);
     }
     if(_bottom_item)
     {
         _bottom_sprite = _bottom_item->create_sprite(_pos);
+        _bottom_sprite->set_z_order(1);
     }
     if(_hair_item)
     {
         _hair_sprite = _hair_item->create_sprite(_pos);
+        _top_sprite->set_z_order(0);
     }
-
-    if(_body_sprite)   _body_sprite->set_z_order(4);
-    if(_eyes_sprite)   _eyes_sprite->set_z_order(3);
-    if(_hair_sprite)   _hair_sprite->set_z_order(2);
-    if(_bottom_sprite) _bottom_sprite->set_z_order(1);
-    if(_top_sprite)    _top_sprite->set_z_order(0);
 }
 
-// ---------------------------------------------------------------------------
 
 void CharacterPreview::_sync_sprites()
 {
@@ -201,13 +168,13 @@ void CharacterPreview::_sync_sprites()
 void CharacterPreview::update()
 {
     // Simple 2-frame idle bounce
-    constexpr int k_idle_period = 24;    // tweak for speed
+    constexpr int k_idle_period = 24;
 
     ++_idle_counter;
     if(_idle_counter >= k_idle_period)
     {
         _idle_counter = 0;
-        _idle_frame ^= 1;                // toggle 0 <-> 1
+        _idle_frame ^= 1;
         _sync_sprites();
     }
 }

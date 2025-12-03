@@ -5,49 +5,7 @@
 #include "bn_math.h"
 
 #include "world_map.h"
-
-namespace
-{
-    // Same component lists as customization screen:
-    constexpr int k_body_type_count = 1;
-    const bn::sprite_item* k_body_type_options[k_body_type_count] =
-    {
-        &bn::sprite_items::skin_0,
-    };
-
-    constexpr int k_hair_count = 2;
-    const bn::sprite_item* k_hair_options[k_hair_count] =
-    {
-        &bn::sprite_items::hair_0,
-        &bn::sprite_items::hair_1,
-    };
-
-    constexpr int k_eyes_count = 1;
-    const bn::sprite_item* k_eyes_options[k_eyes_count] =
-    {
-        &bn::sprite_items::eyes_0,
-    };
-
-    constexpr int k_top_count = 1;
-    const bn::sprite_item* k_top_options[k_top_count] =
-    {
-        &bn::sprite_items::top_0,
-    };
-
-    constexpr int k_bottom_count = 1;
-    const bn::sprite_item* k_bottom_options[k_bottom_count] =
-    {
-        &bn::sprite_items::bottom_0,
-    };
-
-    void apply_ramp_to_palette(const ColorRamp& ramp, bn::sprite_palette_ptr& pal)
-    {
-        pal.set_color(1, ramp.c0);
-        pal.set_color(2, ramp.c1);
-        pal.set_color(3, ramp.c2);
-        pal.set_color(4, ramp.c3);
-    }
-}
+#include "character_assets.h"
 
 // ---------------------------------------------------------------------------
 
@@ -185,7 +143,7 @@ void Player::_rebuild_sprites()
     // Pick sprite_items based on indices
     _body_item   = k_body_type_options[0];
     _hair_item   = k_hair_options[_appearance.hair_index];
-    _eyes_item   = k_eyes_options[_appearance.eyes_index];
+    _eyes_item   = k_eyes_options[0];
     _top_item    = k_top_options[_appearance.top_index];
     _bottom_item = k_bottom_options[_appearance.bottom_index];
 
@@ -222,36 +180,36 @@ void Player::_apply_colors()
     // Body (skin)
     {
         bn::sprite_palette_ptr pal = _body_sprite->palette();
-        const ColorRamp& ramp = get_skin_ramp(_appearance.body_color_index);
-        apply_ramp_to_palette(ramp, pal);
+        const ColorRamp& ramp = get_skin_ramp(_appearance.body_color);
+        ramp.apply_ramp_to_palette(pal);
     }
 
     // Hair
     {
         bn::sprite_palette_ptr pal = _hair_sprite->palette();
-        const ColorRamp& ramp = get_feature_ramp(_appearance.hair_color_index);
-        apply_ramp_to_palette(ramp, pal);
+        const ColorRamp& ramp = get_feature_ramp(_appearance.hair_color);
+        ramp.apply_ramp_to_palette(pal);
     }
 
     // Eyes
     {
         bn::sprite_palette_ptr pal = _eyes_sprite->palette();
-        const ColorRamp& ramp = get_feature_ramp(_appearance.eyes_color_index);
-        apply_ramp_to_palette(ramp, pal);
+        const ColorRamp& ramp = get_feature_ramp(_appearance.eyes_color);
+        ramp.apply_ramp_to_palette(pal);
     }
 
     // Top
     {
         bn::sprite_palette_ptr pal = _top_sprite->palette();
-        const ColorRamp& ramp = get_feature_ramp(_appearance.top_color_index);
-        apply_ramp_to_palette(ramp, pal);
+        const ColorRamp& ramp = get_feature_ramp(_appearance.top_color);
+        ramp.apply_ramp_to_palette(pal);
     }
 
     // Bottom
     {
         bn::sprite_palette_ptr pal = _bottom_sprite->palette();
-        const ColorRamp& ramp = get_feature_ramp(_appearance.bottom_color_index);
-        apply_ramp_to_palette(ramp, pal);
+        const ColorRamp& ramp = get_feature_ramp(_appearance.bottom_color);
+        ramp.apply_ramp_to_palette(pal);
     }
 }
 
