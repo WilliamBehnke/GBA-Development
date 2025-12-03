@@ -81,7 +81,7 @@ void WorldMap::_build_layers_from_data()
         _layer2_map.map_item);
 
     _layer2_bg = bg_item2.create_bg(0, 0);
-    _layer2_bg->set_priority(1);   // in front of layer 1, behind sprites
+    _layer2_bg->set_priority(0);   // in front of layer 1, behind sprites
 
     // -----------------------------
     // Collision layer

@@ -126,14 +126,17 @@ void Player::_apply_movement(const WorldMap& world_map)
     bn::fixed_point new_pos = _pos;
 
     // Tune these if needed:
-    constexpr bn::fixed feet_y_offset = 6;   // how far below center the "feet" are
-    constexpr bn::fixed half_width    = 6;   // half-width of collision box
+    bn::fixed feet_y_offset = 9;
+    if (_move_dy < 0) {
+        feet_y_offset = 6;
+    }
+    constexpr bn::fixed half_width = 6;   // half-width of collision box
 
     auto can_stand_at = [&](const bn::fixed_point& base_pos)
     {
         // Base "feet" point:
         bn::fixed_point feet_center = base_pos;
-        feet_center.set_y(feet_center.y() + 2 + feet_y_offset);
+        feet_center.set_y(feet_center.y() + feet_y_offset);
 
         // Left and right of the feet:
         bn::fixed_point feet_left  = feet_center;
@@ -300,11 +303,11 @@ void Player::_sync_sprites()
     _bottom_sprite->set_position(_pos);
     _hair_sprite->set_position(_pos);
 
-    _body_sprite->set_bg_priority(0);
-    _eyes_sprite->set_bg_priority(0);
-    _top_sprite->set_bg_priority(0);
-    _bottom_sprite->set_bg_priority(0);
-    _hair_sprite->set_bg_priority(0);
+    _body_sprite->set_bg_priority(1);
+    _eyes_sprite->set_bg_priority(1);
+    _top_sprite->set_bg_priority(1);
+    _bottom_sprite->set_bg_priority(1);
+    _hair_sprite->set_bg_priority(1);
 
     // Apply camera if present
     if(_camera)
