@@ -2,6 +2,9 @@
 
 #include "bn_keypad.h"
 #include "bn_sprite_palette_ptr.h"
+#include "bn_math.h"
+
+#include "world_map.h"
 
 namespace
 {
@@ -60,44 +63,116 @@ Player::Player(const CharacterAppearance& appearance, const bn::fixed_point& sta
 
 // ---------------------------------------------------------------------------
 
+void Player::attach_camera(const bn::camera_ptr& camera)
+{
+    _camera = camera;
+
+    if(_body_sprite)
+    {
+        auto& cam = _camera.value();
+        _body_sprite->set_camera(cam);
+        _eyes_sprite->set_camera(cam);
+        _top_sprite->set_camera(cam);
+        _bottom_sprite->set_camera(cam);
+        _hair_sprite->set_camera(cam);
+    }
+}
+
+// ---------------------------------------------------------------------------
+
 void Player::_handle_input()
 {
-    bn::fixed dx = 0;
-    bn::fixed dy = 0;
+    _move_dx = 0;
+    _move_dy = 0;
 
     if(bn::keypad::left_held())
     {
-        dx -= k_speed;
+        _move_dx -= k_speed;
         _direction = FacingDirection::Left;
     }
     else if(bn::keypad::right_held())
     {
-        dx += k_speed;
+        _move_dx += k_speed;
         _direction = FacingDirection::Right;
     }
 
     if(bn::keypad::up_held())
     {
-        dy -= k_speed;
+        _move_dy -= k_speed;
         _direction = FacingDirection::Up;
     }
     else if(bn::keypad::down_held())
     {
-        dy += k_speed;
+        _move_dy += k_speed;
         _direction = FacingDirection::Down;
     }
 
-    _moving = (dx != 0 || dy != 0);
+    _moving = (_move_dx != 0 || _move_dy != 0);
 
     // Normalize diagonal speed a bit
-    if(dx != 0 && dy != 0)
+    if(_move_dx != 0 && _move_dy != 0)
     {
-        dx *= bn::fixed(0.707);
-        dy *= bn::fixed(0.707);
+        _move_dx *= bn::fixed(0.707);
+        _move_dy *= bn::fixed(0.707);
+    }
+}
+
+// ---------------------------------------------------------------------------
+// Collision-aware movement (wider hitbox)
+// ---------------------------------------------------------------------------
+
+void Player::_apply_movement(const WorldMap& world_map)
+{
+    bn::fixed_point new_pos = _pos;
+
+    // Tune these if needed:
+    constexpr bn::fixed feet_y_offset = 6;   // how far below center the "feet" are
+    constexpr bn::fixed half_width    = 6;   // half-width of collision box
+
+    auto can_stand_at = [&](const bn::fixed_point& base_pos)
+    {
+        // Base "feet" point:
+        bn::fixed_point feet_center = base_pos;
+        feet_center.set_y(feet_center.y() + 2 + feet_y_offset);
+
+        // Left and right of the feet:
+        bn::fixed_point feet_left  = feet_center;
+        bn::fixed_point feet_right = feet_center;
+
+        feet_left.set_x(feet_left.x() - half_width);
+        feet_right.set_x(feet_right.x() + half_width - 1);
+
+        // All three must be non-solid:
+        return !world_map.is_solid(feet_center) &&
+               !world_map.is_solid(feet_left) &&
+               !world_map.is_solid(feet_right);
+    };
+
+    // Try X axis
+    if(_move_dx != 0)
+    {
+        bn::fixed_point test = new_pos;
+        test.set_x(test.x() + _move_dx);
+
+        if(can_stand_at(test))
+        {
+            new_pos.set_x(test.x());
+        }
     }
 
-    _pos.set_x(_pos.x() + dx);
-    _pos.set_y(_pos.y() + dy);
+    // Try Y axis
+    if(_move_dy != 0)
+    {
+        bn::fixed_point test = new_pos;
+        test.set_y(test.y() + _move_dy);
+
+        if(can_stand_at(test))
+        {
+            new_pos.set_y(test.y());
+        }
+    }
+
+    _pos = new_pos;
 }
 
 // ---------------------------------------------------------------------------
@@ -117,6 +192,17 @@ void Player::_rebuild_sprites()
     _top_sprite    = _top_item->create_sprite(_pos);
     _bottom_sprite = _bottom_item->create_sprite(_pos);
     _hair_sprite   = _hair_item->create_sprite(_pos);
+
+    // Attach camera if it already exists
+    if(_camera)
+    {
+        auto& cam = _camera.value();
+        _body_sprite->set_camera(cam);
+        _eyes_sprite->set_camera(cam);
+        _top_sprite->set_camera(cam);
+        _bottom_sprite->set_camera(cam);
+        _hair_sprite->set_camera(cam);
+    }
 
     // Set z-order (body -> eyes -> hair -> bottom -> top)
     _body_sprite->set_z_order(4);
@@ -173,7 +259,7 @@ void Player::_update_animation()
     // Layout per direction:
     // [idle0, idle1, walk0, walk1, walk2, walk3]
     constexpr int k_idle_period = 24;  // frames between flips when idle
-    constexpr int k_walk_period = 6;   // frames between flips when walking
+    constexpr int k_walk_period = 6;   // frames between steps when walking
 
     ++_anim_counter;
 
@@ -193,7 +279,7 @@ void Player::_update_animation()
             _idle_frame ^= 1;                      // toggle 0 <-> 1
         }
 
-        // Optional: reset walk cycle when you stop moving
+        // Reset walk cycle when you stop moving
         _walk_frame = 0;
     }
 }
@@ -204,7 +290,7 @@ void Player::_sync_sprites()
 {
     if(!_body_sprite || !_eyes_sprite || !_top_sprite || !_bottom_sprite || !_hair_sprite)
     {
-        return; // safety, shouldn't happen
+        return; // safety
     }
 
     // Position
@@ -214,11 +300,29 @@ void Player::_sync_sprites()
     _bottom_sprite->set_position(_pos);
     _hair_sprite->set_position(_pos);
 
+    _body_sprite->set_bg_priority(0);
+    _eyes_sprite->set_bg_priority(0);
+    _top_sprite->set_bg_priority(0);
+    _bottom_sprite->set_bg_priority(0);
+    _hair_sprite->set_bg_priority(0);
+
+    // Apply camera if present
+    if(_camera)
+    {
+        auto& cam = _camera.value();
+        _body_sprite->set_camera(cam);
+        _eyes_sprite->set_camera(cam);
+        _top_sprite->set_camera(cam);
+        _bottom_sprite->set_camera(cam);
+        _hair_sprite->set_camera(cam);
+    }
+
     // Frames per direction:
     // [idle0, idle1, walk0, walk1, walk2, walk3]
     constexpr int k_frames_per_direction = 6;
 
-    int dir = static_cast<int>(_direction);      // 0=Down,1=Right,2=Up,3=Left
+    // 0=Down, 1=Right, 2=Up, 3=Left (must match your FacingDirection)
+    int dir = static_cast<int>(_direction);
     int base_frame = dir * k_frames_per_direction;
 
     int frame_index;
@@ -231,7 +335,6 @@ void Player::_sync_sprites()
         frame_index = base_frame + _idle_frame;       // idle0..1
     }
 
-    // Use the sprite_items we stored to set tiles
     _body_sprite->set_tiles(_body_item->tiles_item(), frame_index);
     _eyes_sprite->set_tiles(_eyes_item->tiles_item(), frame_index);
     _hair_sprite->set_tiles(_hair_item->tiles_item(), frame_index);
@@ -241,9 +344,46 @@ void Player::_sync_sprites()
 
 // ---------------------------------------------------------------------------
 
-void Player::update()
+void Player::_update_camera(const WorldMap& world_map)
+{
+    if(!_camera)
+        return;
+
+    int map_px_w = world_map.pixel_width();
+    int map_px_h = world_map.pixel_height();
+
+    const bn::fixed half_w = 120;   // 240 / 2
+    const bn::fixed half_h = 80;    // 160 / 2
+
+    bn::fixed cx = _pos.x();
+    bn::fixed cy = _pos.y();
+
+    bn::fixed min_x = bn::fixed(-map_px_w / 2) + half_w;
+    bn::fixed max_x = bn::fixed( map_px_w / 2) - half_w;
+    bn::fixed min_y = bn::fixed(-map_px_h / 2) + half_h;
+    bn::fixed max_y = bn::fixed( map_px_h / 2) - half_h;
+
+    if(min_x > max_x)
+        cx = 0;
+    else
+        cx = bn::clamp(cx, min_x, max_x);
+
+    if(min_y > max_y)
+        cy = 0;
+    else
+        cy = bn::clamp(cy, min_y, max_y);
+
+    _camera->set_x(cx);
+    _camera->set_y(cy);
+}
+
+// ---------------------------------------------------------------------------
+
+void Player::update(const WorldMap& world_map)
 {
     _handle_input();
+    _apply_movement(world_map);
     _update_animation();
+    _update_camera(world_map);
     _sync_sprites();
 }
