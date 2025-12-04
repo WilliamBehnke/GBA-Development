@@ -5,17 +5,12 @@
 #include "bn_keypad.h"
 
 CustomizationScreen::CustomizationScreen() :
-    _preview(bn::fixed_point(-80, 0))
+    _preview(bn::fixed_point(-80, 0), _model.appearance())
 {
-    const CharacterAppearance& a = _model.appearance();
-
     _model.mark_style_dirty();
     _model.mark_colors_dirty();
 
     _apply_to_preview();
-    _preview.set_direction(a.direction);
-    _preview.apply_colors(a);
-
     _refresh_ui();
 }
 
@@ -81,14 +76,16 @@ void CustomizationScreen::_handle_input()
         handle_move(1, 0);
     }
 
-    // Rotate character with A/B
+    // Rotate character with A
     if(bn::keypad::a_pressed())
     {
         _rotate_character(1);
     }
-    else if(bn::keypad::b_pressed())
+
+    // Toggle animation with B
+    if(bn::keypad::b_pressed())
     {
-        _rotate_character(-1);
+        _preview.toggle_animation();
     }
 
     if(ui_needs_refresh)
@@ -111,35 +108,18 @@ void CustomizationScreen::_rotate_character(int delta_steps)
     a.direction = static_cast<FacingDirection>(d);
 
     _preview.set_direction(a.direction);
+    _preview.refresh();
     _preview.set_scale(2);
-    _preview.apply_colors(a);
 }
 
 void CustomizationScreen::_apply_to_preview()
 {
-    const CharacterAppearance& a = appearance();
-
     if(!_model.style_dirty() && !_model.colors_dirty())
     {
         return;
     }
 
-    if(_model.style_dirty())
-    {
-        const bn::sprite_item* body   = k_body_type_options[0];
-        const bn::sprite_item* hair   = k_hair_options[a.hair_index];
-        const bn::sprite_item* eyes   = k_eyes_options[0];
-        const bn::sprite_item* top    = k_top_options[a.top_index];
-        const bn::sprite_item* bottom = k_bottom_options[a.bottom_index];
-
-        _preview.set_layers(body, eyes, top, bottom, hair);
-    }
-
-    if(_model.style_dirty() || _model.colors_dirty())
-    {
-        _preview.apply_colors(a);
-    }
-
+    _preview.refresh();
     _preview.set_scale(2);
 
     _model.clear_dirty();

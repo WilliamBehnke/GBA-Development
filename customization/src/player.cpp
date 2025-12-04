@@ -1,42 +1,25 @@
 #include "player.h"
 
 #include "bn_keypad.h"
-#include "bn_sprite_palette_ptr.h"
 #include "bn_math.h"
 
 #include "world_map.h"
-#include "character_customization/character_assets.h"
 
-// ---------------------------------------------------------------------------
-
-Player::Player(const CharacterAppearance& appearance, const bn::fixed_point& start_pos) :
+Player::Player(const CharacterAppearance& appearance,
+               const bn::fixed_point& start_pos) :
     _appearance(appearance),
     _pos(start_pos),
-    _direction(_appearance.direction)
+    _direction(_appearance.direction),
+    _sprite(_appearance)
 {
-    _rebuild_sprites();
-    _apply_colors();
-    _sync_sprites();
+    _sprite.rebuild(_pos);
 }
-
-// ---------------------------------------------------------------------------
 
 void Player::attach_camera(const bn::camera_ptr& camera)
 {
     _camera = camera;
-
-    if(_body_sprite)
-    {
-        auto& cam = _camera.value();
-        _body_sprite->set_camera(cam);
-        _eyes_sprite->set_camera(cam);
-        _top_sprite->set_camera(cam);
-        _bottom_sprite->set_camera(cam);
-        _hair_sprite->set_camera(cam);
-    }
+    _sprite.attach_camera(camera);
 }
-
-// ---------------------------------------------------------------------------
 
 void Player::_handle_input()
 {
@@ -75,17 +58,14 @@ void Player::_handle_input()
     }
 }
 
-// ---------------------------------------------------------------------------
-// Collision-aware movement (wider hitbox)
-// ---------------------------------------------------------------------------
-
 void Player::_apply_movement(const WorldMap& world_map)
 {
     bn::fixed_point new_pos = _pos;
 
     // Tune these if needed:
     bn::fixed feet_y_offset = 9;
-    if (_move_dy < 0) {
+    if(_move_dy < 0)
+    {
         feet_y_offset = 6;
     }
     constexpr bn::fixed half_width = 6;   // half-width of collision box
@@ -136,175 +116,6 @@ void Player::_apply_movement(const WorldMap& world_map)
     _pos = new_pos;
 }
 
-// ---------------------------------------------------------------------------
-
-void Player::_rebuild_sprites()
-{
-    // Pick sprite_items based on indices
-    _body_item   = k_body_type_options[0];
-    _hair_item   = k_hair_options[_appearance.hair_index];
-    _eyes_item   = k_eyes_options[0];
-    _top_item    = k_top_options[_appearance.top_index];
-    _bottom_item = k_bottom_options[_appearance.bottom_index];
-
-    // Create sprites at current position
-    _body_sprite   = _body_item->create_sprite(_pos);
-    _eyes_sprite   = _eyes_item->create_sprite(_pos);
-    _top_sprite    = _top_item->create_sprite(_pos);
-    _bottom_sprite = _bottom_item->create_sprite(_pos);
-    _hair_sprite   = _hair_item->create_sprite(_pos);
-
-    // Attach camera if it already exists
-    if(_camera)
-    {
-        auto& cam = _camera.value();
-        _body_sprite->set_camera(cam);
-        _eyes_sprite->set_camera(cam);
-        _top_sprite->set_camera(cam);
-        _bottom_sprite->set_camera(cam);
-        _hair_sprite->set_camera(cam);
-    }
-
-    // Set z-order (body -> eyes -> hair -> bottom -> top)
-    _body_sprite->set_z_order(4);
-    _eyes_sprite->set_z_order(3);
-    _hair_sprite->set_z_order(2);
-    _bottom_sprite->set_z_order(1);
-    _top_sprite->set_z_order(0);
-}
-
-// ---------------------------------------------------------------------------
-
-void Player::_apply_colors()
-{
-    // Body (skin)
-    {
-        bn::sprite_palette_ptr pal = _body_sprite->palette();
-        const ColorRamp& ramp = get_skin_ramp(_appearance.body_color);
-        ramp.apply_ramp_to_palette(pal);
-    }
-
-    // Hair
-    {
-        bn::sprite_palette_ptr pal = _hair_sprite->palette();
-        const ColorRamp& ramp = get_feature_ramp(_appearance.hair_color);
-        ramp.apply_ramp_to_palette(pal);
-    }
-
-    // Eyes
-    {
-        bn::sprite_palette_ptr pal = _eyes_sprite->palette();
-        const ColorRamp& ramp = get_feature_ramp(_appearance.eyes_color);
-        ramp.apply_ramp_to_palette(pal);
-    }
-
-    // Top
-    {
-        bn::sprite_palette_ptr pal = _top_sprite->palette();
-        const ColorRamp& ramp = get_feature_ramp(_appearance.top_color);
-        ramp.apply_ramp_to_palette(pal);
-    }
-
-    // Bottom
-    {
-        bn::sprite_palette_ptr pal = _bottom_sprite->palette();
-        const ColorRamp& ramp = get_feature_ramp(_appearance.bottom_color);
-        ramp.apply_ramp_to_palette(pal);
-    }
-}
-
-// ---------------------------------------------------------------------------
-
-void Player::_update_animation()
-{
-    // Layout per direction:
-    // [idle0, idle1, walk0, walk1, walk2, walk3]
-    constexpr int k_idle_period = 24;  // frames between flips when idle
-    constexpr int k_walk_period = 6;   // frames between steps when walking
-
-    ++_anim_counter;
-
-    if(_moving)
-    {
-        if(_anim_counter >= k_walk_period)
-        {
-            _anim_counter = 0;
-            _walk_frame = (_walk_frame + 1) % 4;   // 0..3
-        }
-    }
-    else
-    {
-        if(_anim_counter >= k_idle_period)
-        {
-            _anim_counter = 0;
-            _idle_frame ^= 1;                      // toggle 0 <-> 1
-        }
-
-        // Reset walk cycle when you stop moving
-        _walk_frame = 0;
-    }
-}
-
-// ---------------------------------------------------------------------------
-
-void Player::_sync_sprites()
-{
-    if(!_body_sprite || !_eyes_sprite || !_top_sprite || !_bottom_sprite || !_hair_sprite)
-    {
-        return; // safety
-    }
-
-    // Position
-    _body_sprite->set_position(_pos);
-    _eyes_sprite->set_position(_pos);
-    _top_sprite->set_position(_pos);
-    _bottom_sprite->set_position(_pos);
-    _hair_sprite->set_position(_pos);
-
-    _body_sprite->set_bg_priority(1);
-    _eyes_sprite->set_bg_priority(1);
-    _top_sprite->set_bg_priority(1);
-    _bottom_sprite->set_bg_priority(1);
-    _hair_sprite->set_bg_priority(1);
-
-    // Apply camera if present
-    if(_camera)
-    {
-        auto& cam = _camera.value();
-        _body_sprite->set_camera(cam);
-        _eyes_sprite->set_camera(cam);
-        _top_sprite->set_camera(cam);
-        _bottom_sprite->set_camera(cam);
-        _hair_sprite->set_camera(cam);
-    }
-
-    // Frames per direction:
-    // [idle0, idle1, walk0, walk1, walk2, walk3]
-    constexpr int k_frames_per_direction = 6;
-
-    // 0=Down, 1=Right, 2=Up, 3=Left (must match your FacingDirection)
-    int dir = static_cast<int>(_direction);
-    int base_frame = dir * k_frames_per_direction;
-
-    int frame_index;
-    if(_moving)
-    {
-        frame_index = base_frame + 2 + _walk_frame;   // walk0..3
-    }
-    else
-    {
-        frame_index = base_frame + _idle_frame;       // idle0..1
-    }
-
-    _body_sprite->set_tiles(_body_item->tiles_item(), frame_index);
-    _eyes_sprite->set_tiles(_eyes_item->tiles_item(), frame_index);
-    _hair_sprite->set_tiles(_hair_item->tiles_item(), frame_index);
-    _bottom_sprite->set_tiles(_bottom_item->tiles_item(), frame_index);
-    _top_sprite->set_tiles(_top_item->tiles_item(), frame_index);
-}
-
-// ---------------------------------------------------------------------------
-
 void Player::_update_camera(const WorldMap& world_map)
 {
     if(!_camera)
@@ -338,13 +149,11 @@ void Player::_update_camera(const WorldMap& world_map)
     _camera->set_y(cy);
 }
 
-// ---------------------------------------------------------------------------
-
 void Player::update(const WorldMap& world_map)
 {
     _handle_input();
     _apply_movement(world_map);
-    _update_animation();
     _update_camera(world_map);
-    _sync_sprites();
+
+    _sprite.update(_pos, _direction, _moving);
 }
