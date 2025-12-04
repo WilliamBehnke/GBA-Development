@@ -112,7 +112,7 @@ namespace
             // HAIR STYLE: preview hair style with current hair color
             case CustomizationTab::HairStyle:
             {
-                result.item = k_hair_options[appearance.hair_index];
+                result.item = k_hair_options[option_index];
                 result.ramp = &get_feature_ramp(appearance.hair_color);
                 result.sprite_y_offset = 4;
                 break;
@@ -137,7 +137,7 @@ namespace
             // TOP STYLE: actual top sprites with current top color
             case CustomizationTab::TopStyle:
             {
-                result.item = k_top_options[appearance.top_index];
+                result.item = k_top_options[option_index];
                 result.ramp = &get_feature_ramp(appearance.top_color);
                 result.sprite_y_offset = -2;
                 break;
@@ -153,7 +153,7 @@ namespace
             // BOTTOM STYLE: actual bottom sprites with current bottom color
             case CustomizationTab::BottomStyle:
             {
-                result.item = k_bottom_options[appearance.bottom_index];
+                result.item = k_bottom_options[option_index];
                 result.ramp = &get_feature_ramp(appearance.bottom_color);
                 result.sprite_y_offset = -6;
                 break;
