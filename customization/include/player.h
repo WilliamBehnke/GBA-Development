@@ -6,8 +6,8 @@
 #include "bn_sprite_ptr.h"
 #include "bn_camera_ptr.h"
 
-#include "character_preview.h"   // CharacterAppearance + FacingDirection
-#include "character_colors.h"
+#include "character_customization/character_preview.h"
+#include "character_customization/character_colors.h"
 
 // Component sprite sheets
 #include "bn_sprite_items_skin_0.h"

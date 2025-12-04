@@ -4,7 +4,6 @@
 
 #include "bn_keypad.h"
 
-
 CustomizationScreen::CustomizationScreen() :
     _preview(bn::fixed_point(-80, 0))
 {

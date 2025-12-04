@@ -5,7 +5,7 @@
 #include "bn_math.h"
 
 #include "world_map.h"
-#include "character_assets.h"
+#include "character_customization/character_assets.h"
 
 // ---------------------------------------------------------------------------
 
