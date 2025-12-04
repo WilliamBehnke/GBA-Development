@@ -8,6 +8,7 @@
 #include "bn_color.h"
 #include "bn_camera_ptr.h"
 #include "bn_regular_bg_map_cell.h"
+#include "bn_regular_bg_items_bg.h"
 
 #include "customization_screen.h"
 #include "player.h"
@@ -17,15 +18,14 @@ int main()
 {
     bn::core::init();
 
-    // Set a neutral background
-    bn::bg_palettes::set_transparent_color(bn::color(10, 10, 10));
-
     // -----------------------------
     // 1) Character customization
     // -----------------------------
     CharacterAppearance appearance;
 
     {
+        bn::regular_bg_ptr _bg = bn::regular_bg_items::bg.create_bg(0, 0);
+
         CustomizationScreen customization;
 
         while(!customization.done())
@@ -38,6 +38,8 @@ int main()
         appearance = customization.appearance();
     }
 
+    // Set a neutral background
+    bn::bg_palettes::set_transparent_color(bn::color(10, 10, 10));
 
     // 2) Create camera
     bn::camera_ptr camera = bn::camera_ptr::create(0, 0);

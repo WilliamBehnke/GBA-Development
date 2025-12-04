@@ -5,7 +5,7 @@
 #include "bn_keypad.h"
 
 CustomizationScreen::CustomizationScreen() :
-    _preview(bn::fixed_point(-80, 0), _model.appearance())
+    _preview(bn::fixed_point(-80, 7), _model.appearance())
 {
     _model.mark_style_dirty();
     _model.mark_colors_dirty();
@@ -76,14 +76,17 @@ void CustomizationScreen::_handle_input()
         handle_move(1, 0);
     }
 
-    // Rotate character with A
+    // Rotate character with A and B
     if(bn::keypad::a_pressed())
     {
         _rotate_character(1);
+    } else if(bn::keypad::b_pressed())
+    {
+        _rotate_character(-1);
     }
 
-    // Toggle animation with B
-    if(bn::keypad::b_pressed())
+    // Toggle animation with select
+    if(bn::keypad::select_pressed())
     {
         _preview.toggle_animation();
     }

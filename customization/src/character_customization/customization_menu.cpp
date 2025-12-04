@@ -445,7 +445,7 @@ void CustomizationMenu::_draw_grid(const CharacterAppearance& appearance)
     const int rows = (count + cols - 1) / cols;
 
     const int grid_start_x = -16;
-    const int grid_start_y = -16;
+    const int grid_start_y = -10;
     const int cell_w       = 28;
     const int cell_h       = 24;
 
