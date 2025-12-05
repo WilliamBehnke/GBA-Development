@@ -66,18 +66,17 @@ namespace
     {
         switch(tab)
         {
-            case CustomizationTab::BodyColor:
-                return 3;
             case CustomizationTab::HairStyle:
             case CustomizationTab::TopStyle:
             case CustomizationTab::BottomStyle:
-                return 4;
+                return 5;
+            case CustomizationTab::BodyColor:
             case CustomizationTab::HairColor:
             case CustomizationTab::EyesColor:
             case CustomizationTab::TopColor:
             case CustomizationTab::BottomColor:
             default:
-                return 5;
+                return 4;
         }
     }
 

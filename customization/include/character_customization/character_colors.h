@@ -12,9 +12,10 @@
 // Only body skin tones
 enum class BodyColor : int
 {
-    Pale = 0,
-    Tan  = 1,
-    Dark = 2,
+    Pale  = 0,
+    Tan   = 1,
+    Dark  = 2,
+    Black = 3,
     Count
 };
 
@@ -28,6 +29,7 @@ enum class FeatureColor : int
     Blue   = 4,
     Purple = 5,
     Cyan   = 6,
+    Pink   = 7,
     Count
 };
 

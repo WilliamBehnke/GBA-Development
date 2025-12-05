@@ -19,6 +19,10 @@ namespace
         {
             bn::color(10,  6,  4), bn::color(14,  9,  6), bn::color(18, 12,  8), bn::color(22, 16, 12)
         },
+        // Black
+        {
+            bn::color( 6,  4,  2), bn::color( 9,  6,  4), bn::color(12,  8,  6), bn::color(16, 12,  9)    // lightest
+        },
     };
 
     constexpr ColorRamp feature_ramps[k_feature_color_count] = {
@@ -49,6 +53,10 @@ namespace
         // Cyan
         {
             bn::color( 2, 12, 14), bn::color( 4, 18, 22), bn::color( 8, 24, 30), bn::color(12, 30, 31)
+        },
+        // Pink
+        {
+            bn::color(12,  2, 10), bn::color(18,  4, 16), bn::color(24,  8, 22), bn::color(30, 14, 28)
         },
     };
 }
