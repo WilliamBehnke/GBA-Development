@@ -55,6 +55,8 @@ int main()
     while(true)
     {
         player.update(world);
+        world.update();
+
         bn::core::update();
     }
 

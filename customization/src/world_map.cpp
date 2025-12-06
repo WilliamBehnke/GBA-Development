@@ -3,21 +3,18 @@
 #include "bn_regular_bg_tiles_items_tiles.h"
 #include "bn_bg_palette_items_palette.h"
 #include "bn_regular_bg_item.h"
-
 #include "bn_regular_bg_map_cell_info.h"
-#include "bn_regular_bg_map_item.h"
-#include "bn_regular_bg_ptr.h"
 #include "bn_math.h"
 
 WorldMap::WorldMap()
 {
-    _build_layers_from_data();
+    _build_room(_current_room);
 }
 
 void WorldMap::_fill_layer(const uint16_t* source, BgLayer& layer)
 {
-    const int half_width  = WORLD_MAP_WIDTH  / 2;
-    const int half_height = WORLD_MAP_HEIGHT / 2;
+    const int half_width  = ROOM_WIDTH  / 2;
+    const int half_height = ROOM_HEIGHT / 2;
     constexpr int empty_tile_index = 10;
     int j = 0;
 
@@ -27,7 +24,7 @@ void WorldMap::_fill_layer(const uint16_t* source, BgLayer& layer)
         {
             for(int x = x_start; x < x_end; ++x, ++j)
             {
-                const int index = y * WORLD_MAP_WIDTH + x;
+                const int index = y * ROOM_WIDTH + x;
                 bn::regular_bg_map_cell_info cell_info;
                 const int src_value = source[index];
 
@@ -48,19 +45,22 @@ void WorldMap::_fill_layer(const uint16_t* source, BgLayer& layer)
     // Q1: top-left
     fill_quad(0,           half_height,     0,           half_width);
     // Q2: top-right
-    fill_quad(0,           half_height,     half_width,  WORLD_MAP_WIDTH);
+    fill_quad(0,           half_height,     half_width,  ROOM_WIDTH);
     // Q3: bottom-left
-    fill_quad(half_height, WORLD_MAP_HEIGHT, 0,           half_width);
+    fill_quad(half_height, ROOM_HEIGHT,     0,           half_width);
     // Q4: bottom-right
-    fill_quad(half_height, WORLD_MAP_HEIGHT, half_width,  WORLD_MAP_WIDTH);
-};
+    fill_quad(half_height, ROOM_HEIGHT,     half_width,  ROOM_WIDTH);
+}
 
-void WorldMap::_build_layers_from_data()
+void WorldMap::_build_room(RoomId room)
 {
+    _current_room = room;
+    const RoomData& data = g_rooms[static_cast<int>(room)];
+
     // -----------------------------
     // Layer 1: ground / base
     // -----------------------------
-    _fill_layer(world_layer1, _layer1_map);
+    _fill_layer(data.layer1, _layer1_map);
 
     bn::regular_bg_item bg_item1(
         bn::regular_bg_tiles_items::tiles,
@@ -73,7 +73,7 @@ void WorldMap::_build_layers_from_data()
     // -----------------------------
     // Layer 2: decorations / above
     // -----------------------------
-    _fill_layer(world_layer2, _layer2_map);
+    _fill_layer(data.layer2, _layer2_map);
 
     bn::regular_bg_item bg_item2(
         bn::regular_bg_tiles_items::tiles,
@@ -86,7 +86,7 @@ void WorldMap::_build_layers_from_data()
     // -----------------------------
     // Collision layer
     // -----------------------------
-    for(int i = 0; i < WORLD_MAP_CELLS; ++i)
+    for(int i = 0; i < ROOM_CELLS; ++i)
     {
         _collision_cells[i] = world_collision[i];    // 0 = empty, non-zero = solid
     }
@@ -112,8 +112,8 @@ void WorldMap::set_camera(const bn::camera_ptr& camera)
 // World X/Y in pixels; convert to tile coordinates and look up collision.
 bool WorldMap::is_solid(const bn::fixed_point& world_pos) const
 {
-    int map_px_w = WORLD_MAP_WIDTH * TILE_SIZE;
-    int map_px_h = WORLD_MAP_HEIGHT * TILE_SIZE;
+    int map_px_w = ROOM_WIDTH * TILE_SIZE;
+    int map_px_h = ROOM_HEIGHT * TILE_SIZE;
 
     int left_px = -map_px_w / 2;
     int top_px  = -map_px_h / 2;
@@ -124,22 +124,34 @@ bool WorldMap::is_solid(const bn::fixed_point& world_pos) const
     int tx = (x_px - left_px) / TILE_SIZE;
     int ty = (y_px - top_px) / TILE_SIZE;
 
-    if(tx < 0 || tx >= WORLD_MAP_WIDTH || ty < 0 || ty >= WORLD_MAP_HEIGHT)
+    if(tx < 0 || tx >= ROOM_WIDTH || ty < 0 || ty >= ROOM_HEIGHT)
     {
         // Outside the map = solid wall
         return true;
     }
 
-    int index = ty * WORLD_MAP_WIDTH + tx;
+    int index = ty * ROOM_WIDTH + tx;
     return _collision_cells[index] != 0;
 }
 
 int WorldMap::pixel_width() const
 {
-    return WORLD_MAP_WIDTH * TILE_SIZE;
+    return ROOM_WIDTH * TILE_SIZE;
 }
 
 int WorldMap::pixel_height() const
 {
-    return WORLD_MAP_HEIGHT * TILE_SIZE;
+    return ROOM_HEIGHT * TILE_SIZE;
+}
+
+void WorldMap::change_room(RoomId room)
+{
+    if(room == _current_room)
+        return;
+
+    _build_room(room);
+}
+
+void WorldMap::update()
+{
 }

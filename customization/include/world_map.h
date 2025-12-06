@@ -25,20 +25,28 @@ public:
     int pixel_width() const;
     int pixel_height() const;
 
+    // Current room
+    RoomId current_room() const { return _current_room; }
+
+    // Change to another room
+    void change_room(RoomId room);
+
+    // Per-frame update
+    void update();
+
 private:
-    // Small helper struct to own a regular BG map:
     struct BgLayer
     {
-        alignas(int) bn::regular_bg_map_cell cells[WORLD_MAP_CELLS];
+        alignas(int) bn::regular_bg_map_cell cells[ROOM_CELLS];
         bn::regular_bg_map_item map_item;
 
         BgLayer() :
-            map_item(cells[0], bn::size(WORLD_MAP_WIDTH, WORLD_MAP_HEIGHT))
+            map_item(cells[0], bn::size(ROOM_WIDTH, ROOM_HEIGHT))
         {
         }
     };
 
-    // Two visible layers:
+    // Visible layers:
     BgLayer _layer1_map;
     BgLayer _layer2_map;
 
@@ -46,13 +54,16 @@ private:
     bn::optional<bn::regular_bg_ptr> _layer2_bg;
 
     // Collision layer (0 = empty, non-zero = solid)
-    bn::array<uint8_t, WORLD_MAP_CELLS> _collision_cells;
+    bn::array<uint8_t, ROOM_CELLS> _collision_cells;
 
     // Camera (we don’t move it here; Player does. We just attach it.)
     bn::optional<bn::camera_ptr> _camera;
 
-    void _build_layers_from_data();
+    // Which room is currently loaded
+    RoomId _current_room = RoomId::MainRoom;
 
+    // Internal helpers
+    void _build_room(RoomId room);
     void _fill_layer(const uint16_t* source, BgLayer& layer);
 };
 
