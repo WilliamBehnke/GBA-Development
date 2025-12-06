@@ -11,11 +11,11 @@ WorldMap::WorldMap()
     _build_room(_current_room);
 }
 
-void WorldMap::_fill_layer(const uint16_t* source, BgLayer& layer)
+void WorldMap::_fill_layer(const uint8_t* source, BgLayer& layer)
 {
     const int half_width  = ROOM_WIDTH  / 2;
     const int half_height = ROOM_HEIGHT / 2;
-    constexpr int empty_tile_index = 10;
+    constexpr int empty_tile_index = 40;
     int j = 0;
 
     auto fill_quad = [&](int y_start, int y_end, int x_start, int x_end)
@@ -88,11 +88,68 @@ void WorldMap::_build_room(RoomId room)
     // -----------------------------
     for(int i = 0; i < ROOM_CELLS; ++i)
     {
-        _collision_cells[i] = world_collision[i];    // 0 = empty, non-zero = solid
+        // 0 = empty, non-zero = solid
+        _collision_cells[i] = data.collision[i];
+    }
+
+    // -----------------------------
+    // Doors for this room (from RoomData::doors)
+    // -----------------------------
+    _doors.clear();
+
+    const int map_px_w = ROOM_WIDTH * TILE_SIZE;
+    const int map_px_h = ROOM_HEIGHT * TILE_SIZE;
+
+    const int left_px = -map_px_w / 2;
+    const int top_px  = -map_px_h / 2;
+
+    for(int i = 0; i < data.door_count; ++i)
+    {
+        const DoorData& dd = data.doors[i];
+
+        // Tile rectangle -> pixel center
+        // door spans [tile_x .. tile_x + width_tiles - 1]
+        const int door_px_center_x =
+            left_px + dd.tile_x * TILE_SIZE + (dd.width_tiles * TILE_SIZE) / 2;
+        const int door_px_center_y =
+            top_px + dd.tile_y * TILE_SIZE + TILE_SIZE / 2;
+
+        bn::fixed_point door_center{
+            bn::fixed(door_px_center_x),
+            bn::fixed(door_px_center_y)
+        };
+
+        // Half-width/height in pixels
+        const bn::fixed half_width  = bn::fixed(dd.width_tiles * TILE_SIZE) / 2;
+        const bn::fixed half_height = 6;
+
+        // Spawn position in target room (pixel coordinates, room-centered)
+        bn::fixed_point spawn_pos{
+            bn::fixed(dd.target_x_px),
+            bn::fixed(dd.target_y_px)
+        };
+
+        if(!_doors.full())
+        {
+            _doors.push_back(Door(
+                door_center,
+                half_width,
+                half_height,
+                dd.target_room,
+                spawn_pos
+            ));
+        }
+        // else: silently ignore extra doors if MAX_DOORS_PER_ROOM is exceeded
+    }
+
+    // Reattach camera to BGs + doors if we already have one
+    if(_camera)
+    {
+        set_camera(_camera.value());
     }
 }
 
-// Attach camera to both BG layers:
+// Attach camera to both BG layers and all doors:
 void WorldMap::set_camera(const bn::camera_ptr& camera)
 {
     _camera = camera;
@@ -105,6 +162,11 @@ void WorldMap::set_camera(const bn::camera_ptr& camera)
     if(_layer2_bg)
     {
         _layer2_bg->set_camera(_camera.value());
+    }
+
+    for(Door& door : _doors)
+    {
+        door.set_camera(_camera);
     }
 }
 
@@ -152,6 +214,22 @@ void WorldMap::change_room(RoomId room)
     _build_room(room);
 }
 
+bn::optional<DoorTarget> WorldMap::check_door_collision(const bn::fixed_point& player_pos) const
+{
+    for(const Door& door : _doors)
+    {
+        if(door.contains(player_pos))
+        {
+            return door.target();
+        }
+    }
+    return bn::nullopt;
+}
+
 void WorldMap::update()
 {
+    for(Door& door : _doors)
+    {
+        door.update();
+    }
 }

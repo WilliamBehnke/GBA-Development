@@ -58,7 +58,7 @@ void Player::_handle_input()
     }
 }
 
-void Player::_apply_movement(const WorldMap& world_map)
+void Player::_apply_movement(const WorldMap* world_map)
 {
     bn::fixed_point new_pos = _pos;
 
@@ -84,9 +84,9 @@ void Player::_apply_movement(const WorldMap& world_map)
         feet_right.set_x(feet_right.x() + half_width - 1);
 
         // All three must be non-solid:
-        return !world_map.is_solid(feet_center) &&
-               !world_map.is_solid(feet_left) &&
-               !world_map.is_solid(feet_right);
+        return !world_map->is_solid(feet_center) &&
+               !world_map->is_solid(feet_left) &&
+               !world_map->is_solid(feet_right);
     };
 
     // Try X axis
@@ -116,13 +116,13 @@ void Player::_apply_movement(const WorldMap& world_map)
     _pos = new_pos;
 }
 
-void Player::_update_camera(const WorldMap& world_map)
+void Player::_update_camera(const WorldMap* world_map)
 {
     if(!_camera)
         return;
 
-    int map_px_w = world_map.pixel_width();
-    int map_px_h = world_map.pixel_height();
+    int map_px_w = world_map->pixel_width();
+    int map_px_h = world_map->pixel_height();
 
     const bn::fixed half_w = 120;   // 240 / 2
     const bn::fixed half_h = 80;    // 160 / 2
@@ -149,7 +149,12 @@ void Player::_update_camera(const WorldMap& world_map)
     _camera->set_y(cy);
 }
 
-void Player::update(const WorldMap& world_map)
+void Player::update_sprite()
+{
+    _sprite.update(_pos, _direction, _moving);
+}
+
+void Player::update(const WorldMap* world_map)
 {
     _handle_input();
     _apply_movement(world_map);
