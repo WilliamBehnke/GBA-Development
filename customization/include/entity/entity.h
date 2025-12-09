@@ -10,10 +10,13 @@
 #include "bn_fixed.h"
 #include "bn_math.h"
 
+class WorldMap;
+
 class Entity 
 {
 public:
     Entity(EntitySprite* sprite,
+           const WorldMap* world_map,
            int max_health,
            int damage,
            const Hitbox& hurt_box,
@@ -25,7 +28,7 @@ public:
     virtual void attach_camera(const bn::camera_ptr& camera);
 
     // Per-frame update (call this from sub-classes)
-    virtual void update();
+    void update_entity();
 
     int health() const     { return _health; }
     int max_health() const { return _max_health; }
@@ -55,6 +58,7 @@ public:
 
 protected:
     EntitySprite* _sprite;
+    const WorldMap* _world_map;
 
     int _health     = 0;
     int _max_health = 0;
@@ -65,6 +69,10 @@ protected:
 
     Hitbox _hurt_box;
     Hitbox _attack_box;
+
+    bn::fixed_point _clamp_to_world(const bn::fixed_point& candidate) const;
+    virtual bn::fixed_point _get_feet_position(const bn::fixed_point& old_pos, const bn::fixed_point& new_pos) const = 0;
+    bool _can_stand_at(const bn::fixed_point& old_pos, const bn::fixed_point& new_pos) const;
 
 private:
     void _tick_invulnerability();
@@ -77,8 +85,8 @@ private:
 
     bn::fixed_point _knockback_dir      = bn::fixed_point(0, 0);  // normalized
     int             _knockback_timer    = 0;
-    int             _knockback_duration = 8;        // frames of knockback
-    bn::fixed       _knockback_strength = 1;        // pixels per frame
+    int             _knockback_duration = 6;        // frames of knockback
+    bn::fixed       _knockback_strength = 2;        // pixels per frame
 };
 
 #endif // ENTITY_H

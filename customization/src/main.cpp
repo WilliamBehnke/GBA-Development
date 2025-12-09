@@ -17,6 +17,7 @@
 #include "customization_screen.h"
 #include "player.h"
 #include "enemy.h"
+#include "enemy_sprite.h"
 #include "entity_manager.h"
 #include "world_map.h"
 #include "damage_numbers.h"
@@ -97,19 +98,19 @@ int main()
     EntityManager entity_manager(&player);
 
     EnemySprite enemy_sprite1(bn::fixed_point(-200, 0));
-    Enemy enemy1(&enemy_sprite1);
+    Enemy enemy1(&enemy_sprite1, world);
     enemy1.attach_camera(camera);
     enemy1.set_target(&player);
     entity_manager.add_enemy(&enemy1);
 
     EnemySprite enemy_sprite2(bn::fixed_point(0, -150));
-    Enemy enemy2(&enemy_sprite2);
+    Enemy enemy2(&enemy_sprite2, world);
     enemy2.attach_camera(camera);
     enemy2.set_target(&player);
     entity_manager.add_enemy(&enemy2);
 
     EnemySprite enemy_sprite3(bn::fixed_point(50, 200));
-    Enemy enemy3(&enemy_sprite3);
+    Enemy enemy3(&enemy_sprite3, world);
     enemy3.attach_camera(camera);
     enemy3.set_target(&player);
     entity_manager.add_enemy(&enemy3);
@@ -122,7 +123,7 @@ int main()
         world->update();
 
         // 2) Check for door collision using the player's position
-        if(auto door = world->check_door_collision(player.position()))
+        if(auto door = world->check_door_collision(player_sprite.position()))
         {
             // Copy out values BEFORE changing the room, so we don't use a dangling pointer
             RoomId target_room = door->room_id;
@@ -143,9 +144,7 @@ int main()
             world->change_room(target_room);
 
             // Teleport player to the door's spawn position
-            player.set_position(spawn_pos);
-            player.set_direction(FacingDirection::Down);
-            player.update_sprite();
+            player.update_sprite(spawn_pos, FacingDirection::Down);
 
             // Recenter camera on the player and re-attach to world
             update_camera(camera, world, spawn_pos);

@@ -7,7 +7,7 @@
 #include "bn_sprite_palette_ptr.h"
 
 PlayerSprite::PlayerSprite(const CharacterAppearance& appearance) :
-    _appearance(appearance), 
+    _appearance(appearance),
     _palette(k_body_type_options[0]->palette_item().create_palette())
 {
 }
@@ -165,7 +165,7 @@ void PlayerSprite::_rebuild_sprites(const bn::fixed_point& pos)
 void PlayerSprite::_update_movement_animation(bool moving)
 {
     constexpr int k_idle_period = 24; // frames between idle flips
-    constexpr int k_walk_period = 6;  // frames between walk steps
+    constexpr int k_walk_period = 8;  // frames between walk steps
 
     _moving = moving;
     ++_anim_counter;

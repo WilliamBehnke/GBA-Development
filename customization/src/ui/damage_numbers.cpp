@@ -66,6 +66,7 @@ void DamageNumbers::update()
             bn::fixed y = e.pos.y();
 
             e.sprites[j].set_position(x, y);
+            e.sprites[j].set_bg_priority(0);
             e.sprites[j].set_z_order(-32767);   // Highest priority layer
         }
 

@@ -9,14 +9,12 @@ Player::Player(PlayerSprite* sprite,
                const bn::fixed_point& start_pos,
                const WorldMap* world) :
     Entity(
-        sprite, 10, 1, Hitbox(0, 0, 6, 6), Hitbox(0, 0, 6, 6), 60
+        sprite, world, 100, 1, Hitbox(0, 0, 6, 6), Hitbox(0, 0, 6, 6), 60
     ),
-    _pos(start_pos),
     _direction(FacingDirection::Down),
-    _world_map(world),
     _sprite(sprite)
 {
-    _sprite->rebuild(_pos);
+    _sprite->rebuild(start_pos);
 }
 
 void Player::attach_camera(const bn::camera_ptr& camera)
@@ -76,44 +74,26 @@ void Player::_handle_input()
     }
 }
 
-void Player::_apply_movement()
-{
-    bn::fixed_point new_pos = _pos;
-
-    // Tune these if needed:
+bn::fixed_point Player::_get_feet_position(const bn::fixed_point& old_pos, const bn::fixed_point& new_pos) const {
+    bn::fixed_point feet_pos = new_pos;
     bn::fixed feet_y_offset = 9;
-    if(_move_dy < 0)
+    if((new_pos.y() - old_pos.y()) < 0)
     {
         feet_y_offset = 6;
     }
-    constexpr bn::fixed half_width = 6;   // half-width of collision box
+    feet_pos.set_y(feet_pos.y() + feet_y_offset);
+    return feet_pos;
+}
 
-    auto can_stand_at = [&](const bn::fixed_point& base_pos)
-    {
-        // Base "feet" point:
-        bn::fixed_point feet_center = base_pos;
-        feet_center.set_y(feet_center.y() + feet_y_offset);
-
-        // Left and right of the feet:
-        bn::fixed_point feet_left  = feet_center;
-        bn::fixed_point feet_right = feet_center;
-
-        feet_left.set_x(feet_left.x() - half_width);
-        feet_right.set_x(feet_right.x() + half_width - 1);
-
-        // All three must be non-solid:
-        return !_world_map->is_solid(feet_center) &&
-               !_world_map->is_solid(feet_left) &&
-               !_world_map->is_solid(feet_right);
-    };
-
+void Player::_apply_movement(bn::fixed_point& new_pos)
+{
     // Try X axis
     if(_move_dx != 0)
     {
         bn::fixed_point test = new_pos;
         test.set_x(test.x() + _move_dx);
 
-        if(can_stand_at(test))
+        if(_can_stand_at(new_pos, test))
         {
             new_pos.set_x(test.x());
         }
@@ -125,13 +105,11 @@ void Player::_apply_movement()
         bn::fixed_point test = new_pos;
         test.set_y(test.y() + _move_dy);
 
-        if(can_stand_at(test))
+        if(_can_stand_at(new_pos, test))
         {
             new_pos.set_y(test.y());
         }
     }
-
-    _pos = new_pos;
 }
 
 void Player::_update_camera()
@@ -145,8 +123,8 @@ void Player::_update_camera()
     const bn::fixed half_w = 120;   // 240 / 2
     const bn::fixed half_h = 80;    // 160 / 2
 
-    bn::fixed cx = _pos.x();
-    bn::fixed cy = _pos.y();
+    bn::fixed cx = _sprite->position().x();
+    bn::fixed cy = _sprite->position().y();
 
     bn::fixed min_x = bn::fixed(-map_px_w / 2) + half_w;
     bn::fixed max_x = bn::fixed( map_px_w / 2) - half_w;
@@ -167,13 +145,10 @@ void Player::_update_camera()
     _camera->set_y(cy);
 }
 
-void Player::update_sprite()
-{
-    _sprite->update(_pos, _direction, _moving);
-}
-
 void Player::update()
 {
+    bn::fixed_point new_pos = _sprite->position();
+
     if(_sprite->is_locked())
     {
         // No movement input while anim plays
@@ -184,11 +159,11 @@ void Player::update()
     else
     {
         _handle_input();
-        _apply_movement();
+        _apply_movement(new_pos);
     }
 
+    _sprite->update(new_pos, _direction, _moving);
     _update_camera();
-    _sprite->update(_pos, _direction, _moving);
 
-    Entity::update();
+    update_entity();
 }

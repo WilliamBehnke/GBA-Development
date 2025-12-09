@@ -1,24 +1,106 @@
 #include "entity.h"
+#include "world_map.h"
 
 Entity::Entity(EntitySprite* sprite,
+               const WorldMap* world_map,
                int max_health,
                int damage,
                const Hitbox& hurt_box,
                const Hitbox& attack_box,
                int invuln_duration_frames) :
     _sprite(sprite),
+    _world_map(world_map),
     _health(max_health),
     _max_health(max_health),
     _damage(damage),
     _hurt_box(hurt_box),
     _attack_box(attack_box),
-    _invuln_timer(0),
-    _invuln_duration(invuln_duration_frames),
-    _knockback_dir(0, 0),
-    _knockback_timer(0),
-    _knockback_duration(8),
-    _knockback_strength(1)
+    _invuln_duration(invuln_duration_frames)
 {
+}
+
+bn::fixed_point Entity::_clamp_to_world(const bn::fixed_point& candidate) const
+{
+    if(!_world_map)
+    {
+        return candidate;
+    }
+
+    const int map_px_w = _world_map->pixel_width();
+    const int map_px_h = _world_map->pixel_height();
+
+    // Same coordinate model as your camera: (0,0) is map center.
+    const bn::fixed half_w = bn::fixed(map_px_w / 2);
+    const bn::fixed half_h = bn::fixed(map_px_h / 2);
+
+    const bn::fixed min_x = -half_w;
+    const bn::fixed max_x =  half_w;
+    const bn::fixed min_y = -half_h;
+    const bn::fixed max_y =  half_h;
+
+    const bn::fixed clamped_x = bn::clamp(candidate.x(), min_x, max_x);
+    const bn::fixed clamped_y = bn::clamp(candidate.y(), min_y, max_y);
+
+    return bn::fixed_point(clamped_x, clamped_y);
+}
+
+bool Entity::_can_stand_at(const bn::fixed_point& old_pos, const bn::fixed_point& new_pos) const
+{
+    if(!_world_map)
+    {
+        return true;
+    }
+
+    bn::fixed_point feet_center = _get_feet_position(old_pos, new_pos);
+
+    bn::fixed_point feet_left  = feet_center;
+    bn::fixed_point feet_right = feet_center;
+
+    feet_left.set_x(feet_left.x() - _hurt_box.half_width);
+    feet_right.set_x(feet_right.x() + _hurt_box.half_width - 1);
+
+    return !_world_map->is_solid(feet_center) &&
+           !_world_map->is_solid(feet_left)   &&
+           !_world_map->is_solid(feet_right);
+}
+
+void Entity::move_by(const bn::fixed_point& delta)
+{
+    if(!_sprite || !_world_map)
+    {
+        return;
+    }
+
+    bn::fixed_point new_pos = _sprite->position();
+
+    // X axis
+    if(delta.x() != 0)
+    {
+        bn::fixed_point test = new_pos;
+        test.set_x(test.x() + delta.x());
+
+        if(_can_stand_at(new_pos, test))
+        {
+            new_pos.set_x(test.x());
+        }
+    }
+
+    // Y axis
+    if(delta.y() != 0)
+    {
+        bn::fixed_point test = new_pos;
+        test.set_y(test.y() + delta.y());
+
+        if(_can_stand_at(new_pos, test))
+        {
+            new_pos.set_y(test.y());
+        }
+    }
+
+    // Clamp to map bounds so we never leave the world
+    new_pos = _clamp_to_world(new_pos);
+
+    _sprite->set_position(new_pos);
 }
 
 void Entity::attach_camera(const bn::camera_ptr& camera)
@@ -26,7 +108,7 @@ void Entity::attach_camera(const bn::camera_ptr& camera)
     _health_bar.attach_camera(camera);
 }
 
-void Entity::update()
+void Entity::update_entity()
 {
     _apply_knockback();
 
@@ -58,15 +140,6 @@ void Entity::update()
 bn::fixed_point Entity::position() const
 {
     return _sprite ? _sprite->position() : bn::fixed_point();
-}
-
-void Entity::move_by(const bn::fixed_point& delta)
-{
-    if(_sprite)
-    {
-        bn::fixed_point pos = _sprite->position();
-        _sprite->set_position(pos + delta);
-    }
 }
 
 bool Entity::is_attacking() const
@@ -174,8 +247,11 @@ void Entity::_apply_knockback()
 
     --_knockback_timer;
 
-    bn::fixed_point pos = _sprite->position();
-    pos.set_x(pos.x() + _knockback_dir.x() * _knockback_strength);
-    pos.set_y(pos.y() + _knockback_dir.y() * _knockback_strength);
-    _sprite->set_position(pos);
+    const bn::fixed_point delta(
+        _knockback_dir.x() * _knockback_strength,
+        _knockback_dir.y() * _knockback_strength
+    );
+
+    // Knockback now respects collisions and world bounds
+    move_by(delta);
 }

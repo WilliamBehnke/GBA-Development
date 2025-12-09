@@ -14,7 +14,7 @@ Door::Door(const bn::fixed_point& center,
     _sprite(bn::sprite_items::door.create_sprite(center.x(), center.y()))
 {
     _sprite.set_bg_priority(1);
-    _sprite.set_z_order(10);
+    _sprite.set_z_order(32767);
 }
 
 void Door::set_camera(const bn::optional<bn::camera_ptr>& camera)

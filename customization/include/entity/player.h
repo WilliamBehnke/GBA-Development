@@ -6,7 +6,6 @@
 #include "bn_optional.h"
 #include "bn_camera_ptr.h"
 
-#include "hitbox.h"
 #include "entity.h"
 #include "character_customization/character_appearance.h"
 #include "sprite/player_sprite.h"
@@ -24,33 +23,19 @@ public:
     // Attach a camera that follows the player (and is clamped to map edges)
     void attach_camera(const bn::camera_ptr& camera);
 
-    const bn::fixed_point& position() const
+    const bn::fixed_point position() const
     {
-        return _pos;
+        return _sprite->position();
     }
 
-    void set_position(const bn::fixed_point& pos)
-    {
-        _pos = pos;
-    }
-
-    void set_direction(FacingDirection direction)
+    void update_sprite(const bn::fixed_point& pos, FacingDirection direction)
     {
         _direction = direction;
+        _sprite->update(pos, direction, _moving);
     }
 
-    void update_sprite();
-
-    const Hitbox& hitbox() const { return _hitbox; }
-
 private:
-    // World state
-    bn::fixed_point _pos;
     FacingDirection _direction;
-
-    const WorldMap* _world_map;
-
-    Hitbox _hitbox;
 
     // Intended movement this frame
     bn::fixed _move_dx = 0;
@@ -63,11 +48,13 @@ private:
     // Sprite/animation handler
     PlayerSprite* _sprite;
 
-    static constexpr bn::fixed k_speed = bn::fixed(0.8);
+    static constexpr bn::fixed k_speed = bn::fixed(0.6);
+
+    bn::fixed_point _get_feet_position(const bn::fixed_point& old_pos, const bn::fixed_point& new_pos) const override;
 
     void _handle_input();     // read keypad, set _move_dx/_move_dy
-    void _apply_movement();   // apply movement with collisions
-    void _update_camera();    // clamp camera to map edges
+    void _apply_movement(bn::fixed_point& new_pos);
+    void _update_camera();
 };
 
 #endif // PLAYER_H

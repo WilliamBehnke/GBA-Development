@@ -2,6 +2,8 @@
 #define ENTITY_MANAGER_H
 
 #include "entity.h"
+#include "player.h"
+#include "enemy.h"
 #include "bn_vector.h"
 
 class EntityManager
@@ -9,23 +11,23 @@ class EntityManager
 public:
     static constexpr int max_enemies = 32;
 
-    EntityManager(Entity* player = nullptr);
+    EntityManager(Player* player = nullptr);
 
-    void set_player(Entity* player) { _player = player; }
-    Entity* player() const { return _player; }
+    void set_player(Player* player) { _player = player; }
+    Player* player() const { return _player; }
 
-    void add_enemy(Entity* enemy);
+    void add_enemy(Enemy* enemy);
     void clear_enemies();
 
-    bn::vector<Entity*, max_enemies>& enemies() { return _enemies; }
-    const bn::vector<Entity*, max_enemies>& enemies() const { return _enemies; }
+    bn::vector<Enemy*, max_enemies>& enemies() { return _enemies; }
+    const bn::vector<Enemy*, max_enemies>& enemies() const { return _enemies; }
 
     // Per-frame update
     void update();
 
 private:
-    Entity* _player = nullptr;
-    bn::vector<Entity*, max_enemies> _enemies;
+    Player* _player = nullptr;
+    bn::vector<Enemy*, max_enemies> _enemies;
 
     // Internal update phases
     void _update_all();
@@ -34,7 +36,7 @@ private:
     void _handle_bumps();
 
     // Collision resolution
-    void _separate_pair(Entity& a, Entity& b);
+    void _separate_pair(Entity* a, Entity* b);
 
     // Utility iteration helper for all alive enemies
     template<typename Func>
