@@ -9,12 +9,19 @@
 #include "bn_sprite_item.h"
 
 // Character component sprite sheets
-#include "bn_sprite_items_skin_0.h"
-#include "bn_sprite_items_hair_0.h"
-#include "bn_sprite_items_hair_1.h"
+#include "bn_sprite_items_base_0.h"
+#include "bn_sprite_items_hair_long_0.h"
+#include "bn_sprite_items_hair_long_1.h"
 #include "bn_sprite_items_eyes_0.h"
 #include "bn_sprite_items_top_0.h"
 #include "bn_sprite_items_bottom_0.h"
+
+// Icons for character builder
+#include "bn_sprite_items_hair_long_0_icon.h"
+#include "bn_sprite_items_hair_long_1_icon.h"
+#include "bn_sprite_items_eyes_0_icon.h"
+#include "bn_sprite_items_top_0_icon.h"
+#include "bn_sprite_items_bottom_0_icon.h"
 
 // ---------------------------------------------------------
 // Enums for component choices
@@ -22,7 +29,7 @@
 
 enum class BodyType : int
 {
-    Skin0 = 0,
+    Base0 = 0,
     Count
 };
 
@@ -63,14 +70,14 @@ constexpr int k_bottom_count = static_cast<int>(BottomType::Count);
 
 inline constexpr const bn::sprite_item* k_body_type_options[] =
 {
-    &bn::sprite_items::skin_0,
+    &bn::sprite_items::base_0,
 };
 static_assert(sizeof(k_body_type_options)/sizeof(void*) == k_body_count);
 
 inline constexpr const bn::sprite_item* k_hair_options[] =
 {
-    &bn::sprite_items::hair_0,
-    &bn::sprite_items::hair_1,
+    &bn::sprite_items::hair_long_0,
+    &bn::sprite_items::hair_long_1,
 };
 static_assert(sizeof(k_hair_options)/sizeof(void*) == k_hair_count);
 
@@ -91,5 +98,34 @@ inline constexpr const bn::sprite_item* k_bottom_options[] =
     &bn::sprite_items::bottom_0,
 };
 static_assert(sizeof(k_bottom_options)/sizeof(void*) == k_bottom_count);
+
+// ---------------------------------------------------------
+// Icon option arrays for customization screen
+// ---------------------------------------------------------
+
+inline constexpr const bn::sprite_item* k_hair_options_icon[] =
+{
+    &bn::sprite_items::hair_long_0_icon,
+    &bn::sprite_items::hair_long_1_icon,
+};
+static_assert(sizeof(k_hair_options_icon)/sizeof(void*) == k_hair_count);
+
+inline constexpr const bn::sprite_item* k_eyes_options_icon[] =
+{
+    &bn::sprite_items::eyes_0_icon,
+};
+static_assert(sizeof(k_eyes_options_icon)/sizeof(void*) == k_eyes_count);
+
+inline constexpr const bn::sprite_item* k_top_options_icon[] =
+{
+    &bn::sprite_items::top_0_icon,
+};
+static_assert(sizeof(k_top_options_icon)/sizeof(void*) == k_top_count);
+
+inline constexpr const bn::sprite_item* k_bottom_options_icon[] =
+{
+    &bn::sprite_items::bottom_0_icon,
+};
+static_assert(sizeof(k_bottom_options_icon)/sizeof(void*) == k_bottom_count);
 
 #endif // CHARACTER_ASSETS_H

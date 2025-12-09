@@ -8,8 +8,7 @@
 #include "character_colors.h"
 #include "character_assets.h"
 
-#include "bn_sprite_items_color_swatch.h"
-#include "bn_sprite_items_icon_border.h"
+#include "bn_sprite_items_color_icon.h"
 
 #include "bn_sprite_items_tab_body.h"
 #include "bn_sprite_items_tab_eyes.h"
@@ -84,7 +83,6 @@ namespace
     {
         const bn::sprite_item* item = nullptr;
         const ColorRamp* ramp = nullptr;
-        int sprite_y_offset = 0;
 
         bool valid() const
         {
@@ -103,66 +101,58 @@ namespace
             // BODY COLOR: keep the swatch for skin color (3 options)
             case CustomizationTab::BodyColor:
             {
-                result.item = &bn::sprite_items::color_swatch;
+                result.item = &bn::sprite_items::color_icon;
                 result.ramp = &get_skin_ramp(static_cast<BodyColor>(option_index));
-                result.sprite_y_offset = 0;
                 break;
             }
             // HAIR STYLE: preview hair style with current hair color
             case CustomizationTab::HairStyle:
             {
-                result.item = k_hair_options[option_index];
+                result.item = k_hair_options_icon[option_index];
                 result.ramp = &get_feature_ramp(appearance.hair_color);
-                result.sprite_y_offset = 4;
                 break;
             }
             // HAIR COLOR: show the actual current hair style, recolored for each option
             case CustomizationTab::HairColor:
             {
-                result.item = k_hair_options[appearance.hair_index];
+                result.item = k_hair_options_icon[appearance.hair_index];
                 result.ramp = &get_feature_ramp(static_cast<FeatureColor>(option_index));
-                result.sprite_y_offset = 4;
                 break;
             }
             // EYES COLOR: show the actual eyes sprite in each color
             case CustomizationTab::EyesColor:
             {
                 BN_ASSERT(k_eyes_count > 0, "Eyes options should not be empty");
-                result.item = k_eyes_options[0];
+                result.item = k_eyes_options_icon[0];
                 result.ramp = &get_feature_ramp(static_cast<FeatureColor>(option_index));
-                result.sprite_y_offset = 1;
                 break;
             }
             // TOP STYLE: actual top sprites with current top color
             case CustomizationTab::TopStyle:
             {
-                result.item = k_top_options[option_index];
+                result.item = k_top_options_icon[option_index];
                 result.ramp = &get_feature_ramp(appearance.top_color);
-                result.sprite_y_offset = -2;
                 break;
             }
             // TOP COLOR: current top style in each color
             case CustomizationTab::TopColor:
             {
-                result.item = k_top_options[appearance.top_index];
+                result.item = k_top_options_icon[appearance.top_index];
                 result.ramp = &get_feature_ramp(static_cast<FeatureColor>(option_index));
-                result.sprite_y_offset = -2;
                 break;
             }
             // BOTTOM STYLE: actual bottom sprites with current bottom color
             case CustomizationTab::BottomStyle:
             {
-                result.item = k_bottom_options[option_index];
+                result.item = k_bottom_options_icon[option_index];
                 result.ramp = &get_feature_ramp(appearance.bottom_color);
-                result.sprite_y_offset = -6;
                 break;
             }
             // BOTTOM COLOR: current bottom style in each color
             case CustomizationTab::BottomColor:
             {
-                result.item = k_bottom_options[appearance.bottom_index];
+                result.item = k_bottom_options_icon[appearance.bottom_index];
                 result.ramp = &get_feature_ramp(static_cast<FeatureColor>(option_index));
-                result.sprite_y_offset = -6;
                 break;
             }
             default:
@@ -462,9 +452,7 @@ void CustomizationMenu::_draw_grid(const CharacterAppearance& appearance)
             continue;
         }
 
-        int sprite_y = y + visual.sprite_y_offset;
-
-        bn::sprite_ptr s = visual.item->create_sprite(x, sprite_y);
+        bn::sprite_ptr s = visual.item->create_sprite(x, y);
         s.set_tiles(visual.item->tiles_item(), k_preview_frame_index);
 
         bn::sprite_palette_ptr pal = visual.item->palette_item().create_palette();
@@ -472,18 +460,13 @@ void CustomizationMenu::_draw_grid(const CharacterAppearance& appearance)
 
         visual.ramp->apply_ramp_to_palette(pal);
 
-        bn::sprite_ptr border = bn::sprite_items::icon_border.create_sprite(x, y);
-
         if(i == current)
         {
-            border.set_y(y - 4);
-            s.set_y(sprite_y - 4);
+            s.set_y(y - 4);
         }
 
-        border.set_bg_priority(3);
         s.set_bg_priority(2);
 
-        _option_sprites.push_back(bn::move(border));
         _option_sprites.push_back(bn::move(s));
     }
 }

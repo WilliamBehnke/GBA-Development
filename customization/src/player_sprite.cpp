@@ -1,16 +1,20 @@
+// ---------------------------------------------------------------------------
+// player_sprite.cpp
+// ---------------------------------------------------------------------------
+
 #include "player_sprite.h"
 
 #include "bn_sprite_palette_ptr.h"
 
 PlayerSprite::PlayerSprite(const CharacterAppearance& appearance) :
-    _appearance(appearance)
+    _appearance(appearance), 
+    _palette(k_body_type_options[0]->palette_item().create_palette())
 {
 }
 
 void PlayerSprite::rebuild(const bn::fixed_point& pos)
 {
     _rebuild_sprites(pos);
-    _apply_colors();
     _sync_sprites(pos);
 }
 
@@ -75,8 +79,56 @@ void PlayerSprite::update(const bn::fixed_point& pos,
                           bool moving)
 {
     _direction = direction;
-    _update_animation(moving);
+
+    switch(_state)
+    {
+        case AnimationState::Attack:
+            _update_attack_animation();
+            break;
+
+        case AnimationState::Hurt:
+            _update_hurt_animation();
+            break;
+
+        case AnimationState::Death:
+            _update_death_animation();
+            break;
+
+        case AnimationState::Walk:
+        case AnimationState::Idle:
+        default:
+            _update_movement_animation(moving);
+            break;
+    }
+
     _sync_sprites(pos);
+}
+
+void PlayerSprite::play_attack()
+{
+    if(_state == AnimationState::Death)
+        return; // no animation past death
+
+    _state = AnimationState::Attack;
+    _anim_counter = 0;
+    _attack_frame = 0;
+}
+
+void PlayerSprite::play_hurt()
+{
+    if(_state == AnimationState::Death)
+        return;
+
+    _state = AnimationState::Hurt;
+    _anim_counter = 0;
+    _hurt_frame = 0;
+}
+
+void PlayerSprite::play_death()
+{
+    _state = AnimationState::Death;
+    _anim_counter = 0;
+    _death_frame = 0;
 }
 
 void PlayerSprite::_rebuild_sprites(const bn::fixed_point& pos)
@@ -95,15 +147,18 @@ void PlayerSprite::_rebuild_sprites(const bn::fixed_point& pos)
     _bottom_sprite = _bottom_item->create_sprite(pos);
     _hair_sprite   = _hair_item->create_sprite(pos);
 
+    // Apply color palette
+    _appearance.update(_palette);
+
     // Attach camera if it already exists
     attach_camera();
 
-    // Set z-order (body -> eyes -> hair -> bottom -> top)
+    // Set z-order (body -> eyes -> bottom -> top -> hair)
     _body_sprite->set_z_order(4);
     _eyes_sprite->set_z_order(3);
-    _hair_sprite->set_z_order(2);
-    _bottom_sprite->set_z_order(1);
-    _top_sprite->set_z_order(0);
+    _bottom_sprite->set_z_order(2);
+    _top_sprite->set_z_order(1);
+    _hair_sprite->set_z_order(0);
 
     // Set background order
     _body_sprite->set_bg_priority(1);
@@ -113,72 +168,116 @@ void PlayerSprite::_rebuild_sprites(const bn::fixed_point& pos)
     _hair_sprite->set_bg_priority(1);
 }
 
-void PlayerSprite::_apply_colors()
+// ---------------------------------------------------------------------------
+// Animation update logic
+// ---------------------------------------------------------------------------
+//
+// Per-direction layout for your new sprite sheet (0–27):
+//
+//  0–3   idle   (4 frames)
+//  4–9   walk   (6 frames)
+// 10–19  attack (10 frames)
+// 20–23  hurt   (4 frames)
+// 24–27  death  (4 frames)
+//
+// There are 28 frames per direction row. You only have rows for
+// Down, Right, Up. Left uses the Right row with horizontal flip.
+//
+
+void PlayerSprite::_update_movement_animation(bool moving)
 {
-    // Skin
-    {
-        bn::sprite_palette_ptr pal = _body_sprite->palette();
-        const ColorRamp& ramp = get_skin_ramp(_appearance.body_color);
-        ramp.apply_ramp_to_palette(pal);
-    }
-
-    // Hair
-    {
-        bn::sprite_palette_ptr pal = _hair_sprite->palette();
-        const ColorRamp& ramp = get_feature_ramp(_appearance.hair_color);
-        ramp.apply_ramp_to_palette(pal);
-    }
-
-    // Eyes
-    {
-        bn::sprite_palette_ptr pal = _eyes_sprite->palette();
-        const ColorRamp& ramp = get_feature_ramp(_appearance.eyes_color);
-        ramp.apply_ramp_to_palette(pal);
-    }
-
-    // Top
-    {
-        bn::sprite_palette_ptr pal = _top_sprite->palette();
-        const ColorRamp& ramp = get_feature_ramp(_appearance.top_color);
-        ramp.apply_ramp_to_palette(pal);
-    }
-
-    // Bottom
-    {
-        bn::sprite_palette_ptr pal = _bottom_sprite->palette();
-        const ColorRamp& ramp = get_feature_ramp(_appearance.bottom_color);
-        ramp.apply_ramp_to_palette(pal);
-    }
-}
-
-void PlayerSprite::_update_animation(bool moving)
-{
-    // Layout per direction:
-    // [idle0, idle1, walk0, walk1, walk2, walk3]
-    constexpr int k_idle_period = 24;  // frames between flips when idle
-    constexpr int k_walk_period = 6;   // frames between steps when walking
+    constexpr int k_idle_period = 24; // frames between idle flips
+    constexpr int k_walk_period = 6;  // frames between walk steps
 
     _moving = moving;
     ++_anim_counter;
 
     if(_moving)
     {
+        _state = AnimationState::Walk;
+
         if(_anim_counter >= k_walk_period)
         {
             _anim_counter = 0;
-            _walk_frame = (_walk_frame + 1) % 4;   // 0..3
+            _walk_frame = (_walk_frame + 1) % 6;   // 0..5 -> frames 4–9
         }
     }
     else
     {
+        _state = AnimationState::Idle;
+
         if(_anim_counter >= k_idle_period)
         {
             _anim_counter = 0;
-            _idle_frame ^= 1;                      // toggle 0 <-> 1
+            _idle_frame = (_idle_frame + 1) % 4;   // 0..3 -> frames 0–3
         }
 
         // Reset walk cycle when you stop moving
         _walk_frame = 0;
+    }
+}
+
+void PlayerSprite::_update_attack_animation()
+{
+    // Attack: 10 frames (10–19)
+    constexpr int k_attack_frames = 10;
+    constexpr int k_attack_period = 3;  // frames per animation step
+
+    ++_anim_counter;
+    if(_anim_counter >= k_attack_period)
+    {
+        _anim_counter = 0;
+        ++_attack_frame;
+
+        if(_attack_frame >= k_attack_frames)
+        {
+            // End of attack: return to Idle
+            _attack_frame = k_attack_frames - 1; // clamp
+            _state = AnimationState::Idle;
+            _anim_counter = 0;
+            _idle_frame = 0;
+        }
+    }
+}
+
+void PlayerSprite::_update_hurt_animation()
+{
+    // Hurt: 4 frames (20–23)
+    constexpr int k_hurt_frames = 4;
+    constexpr int k_hurt_period = 6;
+
+    ++_anim_counter;
+    if(_anim_counter >= k_hurt_period)
+    {
+        _anim_counter = 0;
+        ++_hurt_frame;
+
+        if(_hurt_frame >= k_hurt_frames)
+        {
+            // End of hurt: back to Idle
+            _hurt_frame = k_hurt_frames - 1;
+            _state = AnimationState::Idle;
+            _anim_counter = 0;
+            _idle_frame = 0;
+        }
+    }
+}
+
+void PlayerSprite::_update_death_animation()
+{
+    // Death: 4 frames (24–27); stay on last frame
+    constexpr int k_death_frames = 4;
+    constexpr int k_death_period = 8;
+
+    ++_anim_counter;
+    if(_anim_counter >= k_death_period)
+    {
+        _anim_counter = 0;
+        if(_death_frame < k_death_frames - 1)
+        {
+            ++_death_frame;
+        }
+        // Once on last frame, remain there with _state = Death
     }
 }
 
@@ -199,27 +298,68 @@ void PlayerSprite::_sync_sprites(const bn::fixed_point& pos)
     // Apply camera if present
     attach_camera();
 
-    // Frames per direction:
-    // [idle0, idle1, walk0, walk1, walk2, walk3]
-    constexpr int k_frames_per_direction = 6;
+    constexpr int k_frames_per_direction = 28;
 
-    // 0=Down, 1=Right, 2=Up, 3=Left (must match FacingDirection)
+    // FacingDirection: 0=Down, 1=Right, 2=Up, 3=Left
     int dir = static_cast<int>(_direction);
-    int base_frame = dir * k_frames_per_direction;
 
-    int frame_index;
-    if(_moving)
+    // We only have Down, Right, Up rows in the sheet.
+    // Left uses the Right row + horizontal flip.
+    int sheet_dir = dir;
+    bool flip_x = false;
+
+    if(_direction == FacingDirection::Left)
     {
-        frame_index = base_frame + 2 + _walk_frame;   // walk0..3
-    }
-    else
-    {
-        frame_index = base_frame + _idle_frame;       // idle0..1
+        sheet_dir = static_cast<int>(FacingDirection::Right);
+        flip_x = true;
     }
 
+    int base_frame = sheet_dir * k_frames_per_direction;
+
+    int rel_frame = 0;  // 0–27 within that direction row
+
+    switch(_state)
+    {
+        case AnimationState::Walk:
+            // walk: frames 4–9
+            rel_frame = 4 + _walk_frame;           // 4 + 0..5
+            break;
+
+        case AnimationState::Attack:
+            // attack: frames 10–19
+            rel_frame = 10 + _attack_frame;        // 10 + 0..9
+            break;
+
+        case AnimationState::Hurt:
+            // hurt: frames 20–23
+            rel_frame = 20 + _hurt_frame;          // 20 + 0..3
+            break;
+
+        case AnimationState::Death:
+            // death: frames 24–27
+            rel_frame = 24 + _death_frame;         // 24 + 0..3
+            break;
+
+        case AnimationState::Idle:
+        default:
+            // idle: frames 0–3
+            rel_frame = _idle_frame;               // 0..3
+            break;
+    }
+
+    int frame_index = base_frame + rel_frame;
+
+    // Apply tiles
     _body_sprite->set_tiles(_body_item->tiles_item(), frame_index);
     _eyes_sprite->set_tiles(_eyes_item->tiles_item(), frame_index);
     _hair_sprite->set_tiles(_hair_item->tiles_item(), frame_index);
     _bottom_sprite->set_tiles(_bottom_item->tiles_item(), frame_index);
     _top_sprite->set_tiles(_top_item->tiles_item(), frame_index);
+
+    // Apply horizontal flip for left-facing
+    _body_sprite->set_horizontal_flip(flip_x);
+    _eyes_sprite->set_horizontal_flip(flip_x);
+    _hair_sprite->set_horizontal_flip(flip_x);
+    _bottom_sprite->set_horizontal_flip(flip_x);
+    _top_sprite->set_horizontal_flip(flip_x);
 }

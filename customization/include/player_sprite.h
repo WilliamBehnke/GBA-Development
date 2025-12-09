@@ -18,6 +18,16 @@
 class PlayerSprite
 {
 public:
+    // High-level animation state
+    enum class AnimationState
+    {
+        Idle,
+        Walk,
+        Attack,
+        Hurt,
+        Death
+    };
+
     // appearance is a snapshot from customization; it is not modified here
     explicit PlayerSprite(const CharacterAppearance& appearance);
 
@@ -32,11 +42,21 @@ public:
     void attach_camera();
     void detach_camera();
 
-    // Update animation + sync positions / frames to the given state
+    // Update animation + sync positions / frames to the given state.
+    // `moving` only affects Idle/Walk; Attack/Hurt/Death override it.
     void update(const bn::fixed_point& pos, FacingDirection direction, bool moving);
+
+    // Trigger special animations
+    void play_attack();
+    void play_hurt();
+    void play_death();
+
+    // Optional helpers
+    AnimationState animation_state() const { return _state; }
 
 private:
     const CharacterAppearance& _appearance;
+    bn::sprite_palette_ptr _palette;
 
     // Layered sprites
     bn::optional<bn::sprite_ptr> _body_sprite;
@@ -53,9 +73,16 @@ private:
     const bn::sprite_item* _hair_item   = nullptr;
 
     // Animation
+    AnimationState _state = AnimationState::Idle;
+
     int _anim_counter = 0;
-    int _idle_frame   = 0;   // 0..1
-    int _walk_frame   = 0;   // 0..3
+
+    int _idle_frame   = 0;   // 0..3    (relative in idle segment)
+    int _walk_frame   = 0;   // 0..5    (relative in walk segment)
+    int _attack_frame = 0;   // 0..9    (relative in attack segment)
+    int _hurt_frame   = 0;   // 0..3    (relative in hurt segment)
+    int _death_frame  = 0;   // 0..3    (relative in death segment)
+
     bool _moving      = false;
     FacingDirection _direction = FacingDirection::Down;
 
@@ -63,8 +90,13 @@ private:
     bn::optional<bn::camera_ptr> _camera;
 
     void _rebuild_sprites(const bn::fixed_point& pos); // pick items, create sprites
-    void _apply_colors();                              // recolor palettes
-    void _update_animation(bool moving);               // idle(2)/walk(4) anim step
+
+    // Different animation updaters
+    void _update_movement_animation(bool moving);      // idle / walk
+    void _update_attack_animation();                   // attack
+    void _update_hurt_animation();                     // hurt
+    void _update_death_animation();                    // death
+
     void _sync_sprites(const bn::fixed_point& pos);    // position + frame index + camera
 };
 

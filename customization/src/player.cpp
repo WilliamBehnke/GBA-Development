@@ -48,6 +48,19 @@ void Player::_handle_input()
         _direction = FacingDirection::Down;
     }
 
+    if(bn::keypad::a_pressed())
+    {
+        _sprite.play_attack();
+    } 
+    else if(bn::keypad::b_pressed())
+    {
+        _sprite.play_hurt();
+    }
+    else if(bn::keypad::select_pressed())
+    {
+        _sprite.play_death();
+    }
+
     _moving = (_move_dx != 0 || _move_dy != 0);
 
     // Normalize diagonal speed a bit
@@ -156,9 +169,26 @@ void Player::update_sprite()
 
 void Player::update(const WorldMap* world_map)
 {
-    _handle_input();
-    _apply_movement(world_map);
-    _update_camera(world_map);
+    // Check if we're in a state that should lock controls
+    auto state = _sprite.animation_state();
+    bool controls_locked =
+        state == PlayerSprite::AnimationState::Attack ||
+        state == PlayerSprite::AnimationState::Hurt   ||
+        state == PlayerSprite::AnimationState::Death;
 
+    if(controls_locked)
+    {
+        // No movement input while anim plays
+        _move_dx = 0;
+        _move_dy = 0;
+        _moving = false;
+    }
+    else
+    {
+        _handle_input();
+        _apply_movement(world_map);
+    }
+
+    _update_camera(world_map);
     _sprite.update(_pos, _direction, _moving);
 }
