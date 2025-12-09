@@ -10,10 +10,16 @@
 #include "bn_camera_ptr.h"
 #include "bn_regular_bg_map_cell.h"
 #include "bn_regular_bg_items_bg.h"
+#include "bn_sprite_text_generator.h"
+
+#include "common_fixed_8x8_sprite_font.h"
 
 #include "customization_screen.h"
 #include "player.h"
+#include "enemy.h"
+#include "entity_manager.h"
 #include "world_map.h"
+#include "damage_numbers.h"
 
 void update_camera(bn::camera_ptr& camera, WorldMap* world, bn::fixed_point& pos)
 {
@@ -75,18 +81,44 @@ int main()
     // 2) Create camera
     bn::camera_ptr camera = bn::camera_ptr::create(0, 0);
 
+    // Damage numbers text generator
+    bn::sprite_text_generator text_gen(common::fixed_8x8_sprite_font);
+    DamageNumbers::initialize(&text_gen, &camera);
+
     // 3) Create world + attach camera
     WorldMap* world = new WorldMap();
     world->set_camera(camera);
 
     // 4) Create player + attach same camera
-    Player player(appearance, bn::fixed_point(0, 0));
+    PlayerSprite player_sprite(appearance);
+    Player player(&player_sprite, bn::fixed_point(0, 0), world);
     player.attach_camera(camera);
+
+    EntityManager entity_manager(&player);
+
+    EnemySprite enemy_sprite1(bn::fixed_point(-200, 0));
+    Enemy enemy1(&enemy_sprite1);
+    enemy1.attach_camera(camera);
+    enemy1.set_target(&player);
+    entity_manager.add_enemy(&enemy1);
+
+    EnemySprite enemy_sprite2(bn::fixed_point(0, -150));
+    Enemy enemy2(&enemy_sprite2);
+    enemy2.attach_camera(camera);
+    enemy2.set_target(&player);
+    entity_manager.add_enemy(&enemy2);
+
+    EnemySprite enemy_sprite3(bn::fixed_point(50, 200));
+    Enemy enemy3(&enemy_sprite3);
+    enemy3.attach_camera(camera);
+    enemy3.set_target(&player);
+    entity_manager.add_enemy(&enemy3);
 
     while(true)
     {
         // 1) Normal updates
-        player.update(world);
+        player.update();
+        entity_manager.update();
         world->update();
 
         // 2) Check for door collision using the player's position
@@ -130,6 +162,8 @@ int main()
                 bn::core::update();
             }
         }
+
+        DamageNumbers::update();
 
         bn::core::update();
     }

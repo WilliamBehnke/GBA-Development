@@ -5,20 +5,25 @@
 
 #include "world_map.h"
 
-Player::Player(const CharacterAppearance& appearance,
-               const bn::fixed_point& start_pos) :
-    _appearance(appearance),
+Player::Player(PlayerSprite* sprite,
+               const bn::fixed_point& start_pos,
+               const WorldMap* world) :
+    Entity(
+        sprite, 10, 1, Hitbox(0, 0, 6, 6), Hitbox(0, 0, 6, 6), 60
+    ),
     _pos(start_pos),
-    _direction(_appearance.direction),
-    _sprite(_appearance)
+    _direction(FacingDirection::Down),
+    _world_map(world),
+    _sprite(sprite)
 {
-    _sprite.rebuild(_pos);
+    _sprite->rebuild(_pos);
 }
 
 void Player::attach_camera(const bn::camera_ptr& camera)
 {
     _camera = camera;
-    _sprite.attach_camera(camera);
+    _sprite->attach_camera(camera);
+    Entity::attach_camera(camera);
 }
 
 void Player::_handle_input()
@@ -50,15 +55,15 @@ void Player::_handle_input()
 
     if(bn::keypad::a_pressed())
     {
-        _sprite.play_attack();
+        _sprite->play_attack();
     } 
     else if(bn::keypad::b_pressed())
     {
-        _sprite.play_hurt();
+        _sprite->play_hurt();
     }
     else if(bn::keypad::select_pressed())
     {
-        _sprite.play_death();
+        _sprite->play_death();
     }
 
     _moving = (_move_dx != 0 || _move_dy != 0);
@@ -71,7 +76,7 @@ void Player::_handle_input()
     }
 }
 
-void Player::_apply_movement(const WorldMap* world_map)
+void Player::_apply_movement()
 {
     bn::fixed_point new_pos = _pos;
 
@@ -97,9 +102,9 @@ void Player::_apply_movement(const WorldMap* world_map)
         feet_right.set_x(feet_right.x() + half_width - 1);
 
         // All three must be non-solid:
-        return !world_map->is_solid(feet_center) &&
-               !world_map->is_solid(feet_left) &&
-               !world_map->is_solid(feet_right);
+        return !_world_map->is_solid(feet_center) &&
+               !_world_map->is_solid(feet_left) &&
+               !_world_map->is_solid(feet_right);
     };
 
     // Try X axis
@@ -129,13 +134,13 @@ void Player::_apply_movement(const WorldMap* world_map)
     _pos = new_pos;
 }
 
-void Player::_update_camera(const WorldMap* world_map)
+void Player::_update_camera()
 {
     if(!_camera)
         return;
 
-    int map_px_w = world_map->pixel_width();
-    int map_px_h = world_map->pixel_height();
+    int map_px_w = _world_map->pixel_width();
+    int map_px_h = _world_map->pixel_height();
 
     const bn::fixed half_w = 120;   // 240 / 2
     const bn::fixed half_h = 80;    // 160 / 2
@@ -164,19 +169,12 @@ void Player::_update_camera(const WorldMap* world_map)
 
 void Player::update_sprite()
 {
-    _sprite.update(_pos, _direction, _moving);
+    _sprite->update(_pos, _direction, _moving);
 }
 
-void Player::update(const WorldMap* world_map)
+void Player::update()
 {
-    // Check if we're in a state that should lock controls
-    auto state = _sprite.animation_state();
-    bool controls_locked =
-        state == PlayerSprite::AnimationState::Attack ||
-        state == PlayerSprite::AnimationState::Hurt   ||
-        state == PlayerSprite::AnimationState::Death;
-
-    if(controls_locked)
+    if(_sprite->is_locked())
     {
         // No movement input while anim plays
         _move_dx = 0;
@@ -186,9 +184,11 @@ void Player::update(const WorldMap* world_map)
     else
     {
         _handle_input();
-        _apply_movement(world_map);
+        _apply_movement();
     }
 
-    _update_camera(world_map);
-    _sprite.update(_pos, _direction, _moving);
+    _update_camera();
+    _sprite->update(_pos, _direction, _moving);
+
+    Entity::update();
 }

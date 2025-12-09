@@ -4,7 +4,8 @@
 #include "bn_fixed.h"
 #include "bn_fixed_point.h"
 
-struct Hitbox {
+struct Hitbox
+{
     bn::fixed offset_x = 0;
     bn::fixed offset_y = 0;
     bn::fixed half_width = 0;

@@ -1,4 +1,4 @@
-#include "Hitbox.h"
+#include "hitbox.h"
 #include "bn_math.h"
 
 Hitbox::Hitbox(bn::fixed ox, bn::fixed oy, bn::fixed hw, bn::fixed hh) :

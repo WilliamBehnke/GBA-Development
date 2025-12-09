@@ -12,24 +12,59 @@ PlayerSprite::PlayerSprite(const CharacterAppearance& appearance) :
 {
 }
 
+bn::fixed_point PlayerSprite::position()
+{
+    if(_body_sprite) 
+        return _body_sprite->position();
+    return bn::fixed_point();
+}
+
+void PlayerSprite::set_position(bn::fixed_point pos)
+{
+    if(!_body_sprite || !_eyes_sprite || !_top_sprite || !_bottom_sprite || !_hair_sprite)
+    {
+        return;
+    }
+
+    _body_sprite->set_position(pos);
+    _eyes_sprite->set_position(pos);
+    _top_sprite->set_position(pos);
+    _bottom_sprite->set_position(pos);
+    _hair_sprite->set_position(pos);
+}
+
+void PlayerSprite::set_z_order(int z)
+{
+    if(!_body_sprite || !_eyes_sprite || !_top_sprite || !_bottom_sprite || !_hair_sprite)
+    {
+        return;
+    }
+
+    _body_sprite->set_z_order(10 * z + 4);
+    _eyes_sprite->set_z_order(10 * z + 3);
+    _bottom_sprite->set_z_order(10 * z + 2);
+    _top_sprite->set_z_order(10 * z + 1);
+    _hair_sprite->set_z_order(10 * z);
+}
+
 void PlayerSprite::rebuild(const bn::fixed_point& pos)
 {
     _rebuild_sprites(pos);
-    _sync_sprites(pos);
+    _sync_sprite(pos);
 }
 
 void PlayerSprite::set_scale(int scale)
 {
-    if(_body_sprite)
-        _body_sprite->set_scale(scale);
-    if(_eyes_sprite)
-        _eyes_sprite->set_scale(scale);
-    if(_top_sprite)
-        _top_sprite->set_scale(scale);
-    if(_bottom_sprite)
-        _bottom_sprite->set_scale(scale);
-    if(_hair_sprite)
-        _hair_sprite->set_scale(scale);
+    if(!_body_sprite || !_eyes_sprite || !_top_sprite || !_bottom_sprite || !_hair_sprite)
+    {
+        return;
+    }
+    
+    _body_sprite->set_scale(scale);
+    _eyes_sprite->set_scale(scale);
+    _top_sprite->set_scale(scale);
+    _bottom_sprite->set_scale(scale);
+    _hair_sprite->set_scale(scale);
 }
 
 void PlayerSprite::attach_camera(const bn::camera_ptr& camera)
@@ -72,63 +107,6 @@ void PlayerSprite::detach_camera()
         _bottom_sprite->remove_camera();
     if(_hair_sprite)
         _hair_sprite->remove_camera();
-}
-
-void PlayerSprite::update(const bn::fixed_point& pos,
-                          FacingDirection direction,
-                          bool moving)
-{
-    _direction = direction;
-
-    switch(_state)
-    {
-        case AnimationState::Attack:
-            _update_attack_animation();
-            break;
-
-        case AnimationState::Hurt:
-            _update_hurt_animation();
-            break;
-
-        case AnimationState::Death:
-            _update_death_animation();
-            break;
-
-        case AnimationState::Walk:
-        case AnimationState::Idle:
-        default:
-            _update_movement_animation(moving);
-            break;
-    }
-
-    _sync_sprites(pos);
-}
-
-void PlayerSprite::play_attack()
-{
-    if(_state == AnimationState::Death)
-        return; // no animation past death
-
-    _state = AnimationState::Attack;
-    _anim_counter = 0;
-    _attack_frame = 0;
-}
-
-void PlayerSprite::play_hurt()
-{
-    if(_state == AnimationState::Death)
-        return;
-
-    _state = AnimationState::Hurt;
-    _anim_counter = 0;
-    _hurt_frame = 0;
-}
-
-void PlayerSprite::play_death()
-{
-    _state = AnimationState::Death;
-    _anim_counter = 0;
-    _death_frame = 0;
 }
 
 void PlayerSprite::_rebuild_sprites(const bn::fixed_point& pos)
@@ -221,7 +199,7 @@ void PlayerSprite::_update_attack_animation()
 {
     // Attack: 10 frames (10–19)
     constexpr int k_attack_frames = 10;
-    constexpr int k_attack_period = 3;  // frames per animation step
+    constexpr int k_attack_period = 4;  // frames per animation step
 
     ++_anim_counter;
     if(_anim_counter >= k_attack_period)
@@ -281,7 +259,7 @@ void PlayerSprite::_update_death_animation()
     }
 }
 
-void PlayerSprite::_sync_sprites(const bn::fixed_point& pos)
+void PlayerSprite::_sync_sprite(const bn::fixed_point& pos)
 {
     if(!_body_sprite || !_eyes_sprite || !_top_sprite || !_bottom_sprite || !_hair_sprite)
     {
