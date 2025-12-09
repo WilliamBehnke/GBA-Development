@@ -63,7 +63,7 @@ private:
     // Sprite/animation handler
     PlayerSprite* _sprite;
 
-    static constexpr bn::fixed k_speed = bn::fixed(1);
+    static constexpr bn::fixed k_speed = bn::fixed(0.8);
 
     void _handle_input();     // read keypad, set _move_dx/_move_dy
     void _apply_movement();   // apply movement with collisions
