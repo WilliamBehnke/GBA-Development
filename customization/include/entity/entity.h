@@ -56,6 +56,9 @@ public:
     // Does our attack box hit their hurt box?
     bool attack_hits(const Entity& other) const;
 
+    virtual bool is_blocking_attack_from(const bn::fixed_point& source_pos) const;
+    virtual void on_block_broken();
+
 protected:
     EntitySprite* _sprite;
     const WorldMap* _world_map;

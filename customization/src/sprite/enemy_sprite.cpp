@@ -162,6 +162,37 @@ void EnemySprite::_update_death_animation()
     }
 }
 
+void EnemySprite::_update_block_animation()
+{
+    // Block loop: 3 frames (28–30)
+    constexpr int k_block_frames = 3;
+    constexpr int k_block_period = 10;
+
+    ++_anim_counter;
+    if(_anim_counter >= k_block_period)
+    {
+        _anim_counter = 0;
+        _block_frame = (_block_frame + 1) % k_block_frames; // 0..2
+    }
+}
+
+void EnemySprite::_update_block_success_animation()
+{
+    // Show the success frame briefly, then revert to Idle.
+    // If the player is still holding block, Player::update will call
+    // play_block() again and we’ll go back into the normal block loop.
+    constexpr int k_block_success_duration = 10; // frames
+
+    ++_block_success_timer;
+    if(_block_success_timer >= k_block_success_duration)
+    {
+        _block_success_timer = 0;
+        _state = AnimationState::Idle;
+        _anim_counter = 0;
+        _idle_frame = 0;
+    }
+}
+
 void EnemySprite::_sync_sprite(const bn::fixed_point& pos)
 {
     if(!_sprite)
@@ -172,7 +203,7 @@ void EnemySprite::_sync_sprite(const bn::fixed_point& pos)
     // Position
     _sprite->set_position(pos);
 
-    constexpr int k_frames_per_direction = 28;
+    constexpr int k_frames_per_direction = 31;
 
     // FacingDirection: 0=Down, 1=Right, 2=Up, 3=Left
     int dir = static_cast<int>(_direction);

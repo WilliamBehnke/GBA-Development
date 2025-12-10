@@ -38,6 +38,8 @@ private:
     void _update_attack_animation() override;
     void _update_hurt_animation() override;
     void _update_death_animation() override;
+    void _update_block_animation() override;
+    void _update_block_success_animation() override;
 
     void _sync_sprite(const bn::fixed_point& pos) override;
 };

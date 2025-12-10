@@ -18,7 +18,9 @@ public:
         Walk,
         Attack,
         Hurt,
-        Death
+        Death,
+        Block,
+        BlockSuccess,
     };
 
     EntitySprite() = default;
@@ -38,6 +40,9 @@ public:
     void play_attack();
     void play_hurt();
     void play_death();
+    void play_block();
+    void play_block_success();
+    void play_idle();
 
     AnimationState animation_state() const { return _state; }
 
@@ -54,6 +59,9 @@ protected:
     int _attack_frame = 0;   // 0..9    (relative in attack segment)
     int _hurt_frame   = 0;   // 0..3    (relative in hurt segment)
     int _death_frame  = 0;   // 0..3    (relative in death segment)
+    int _block_frame  = 0;   // 0..2    (relative in block segment)
+
+    int _block_success_timer = 0;
 
     bool _moving      = false;
     FacingDirection _direction = FacingDirection::Down;
@@ -64,6 +72,8 @@ protected:
     virtual void _update_attack_animation() = 0;
     virtual void _update_hurt_animation() = 0;
     virtual void _update_death_animation() = 0;
+    virtual void _update_block_animation() = 0;
+    virtual void _update_block_success_animation() = 0;
 
     virtual void _sync_sprite(const bn::fixed_point& pos) = 0;
 };

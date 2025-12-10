@@ -34,6 +34,9 @@ public:
         _sprite->update(pos, direction, _moving);
     }
 
+    bool is_blocking_attack_from(const bn::fixed_point& source_pos) const override;
+    void on_block_broken() override;
+
 private:
     FacingDirection _direction;
 
@@ -41,6 +44,7 @@ private:
     bn::fixed _move_dx = 0;
     bn::fixed _move_dy = 0;
     bool _moving = false;
+    bool _is_blocking = false;
 
     // Camera
     bn::optional<bn::camera_ptr> _camera;

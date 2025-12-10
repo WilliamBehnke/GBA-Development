@@ -151,6 +151,15 @@ bool Entity::is_attacking() const
     return _sprite->animation_state() == EntitySprite::AnimationState::Attack;
 }
 
+bool Entity::is_blocking_attack_from(const bn::fixed_point& source_pos) const
+{
+    return false;
+}
+
+void Entity::on_block_broken()
+{
+}
+
 void Entity::take_damage(int amount)
 {
     // Fallback: no direction info (no meaningful knockback dir)
@@ -164,6 +173,17 @@ void Entity::take_damage(int amount, const bn::fixed_point& source_pos)
         return;
     }
 
+    // 1) Check if this hit is fully blocked (no damage, no knockback)
+    if(is_blocking_attack_from(source_pos))
+    {
+        //DamageNumbers::spawn(position(), 0);
+        return;
+    }
+
+    // 2) Not blocked → if we were blocking, break the stance
+    on_block_broken();
+
+    // 3) Apply damage as usual
     _health -= amount;
     if(_health < 0)
     {
@@ -184,6 +204,7 @@ void Entity::take_damage(int amount, const bn::fixed_point& source_pos)
         }
     }
 
+    // 4) Knockback & damage numbers for non-blocked hits
     _start_knockback(source_pos);
 
     DamageNumbers::spawn(position(), amount);

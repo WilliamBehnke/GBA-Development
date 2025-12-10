@@ -29,6 +29,14 @@ void EntitySprite::update(const bn::fixed_point& pos,
             _update_death_animation();
             break;
 
+        case AnimationState::Block:
+            _update_block_animation();
+            break;
+
+        case AnimationState::BlockSuccess:
+            // Just hold the success frame; you could add a timer if desired.
+            break;
+
         case AnimationState::Walk:
         case AnimationState::Idle:
         default:
@@ -65,6 +73,36 @@ void EntitySprite::play_death()
     _anim_counter = 0;
     _death_frame = 0;
 }
+
+void EntitySprite::play_block()
+{
+    if(_state == AnimationState::Death)
+        return;
+    
+    _state = AnimationState::Block;
+    _anim_counter = 0;
+    _block_frame = 0;
+}
+
+void EntitySprite::play_block_success()
+{
+    if(_state == AnimationState::Death)
+        return;
+
+    _state = AnimationState::BlockSuccess;
+    _anim_counter = 0;
+}
+
+void EntitySprite::play_idle()
+{
+    if(_state == AnimationState::Death)
+        return;
+
+    _state = AnimationState::Idle;
+    _anim_counter = 0;
+    _idle_frame = 0;
+}
+
 
 bool EntitySprite::is_locked() const
 {

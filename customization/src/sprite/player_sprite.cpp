@@ -259,6 +259,37 @@ void PlayerSprite::_update_death_animation()
     }
 }
 
+void PlayerSprite::_update_block_animation()
+{
+    // Block loop: 3 frames (28–30)
+    constexpr int k_block_frames = 3;
+    constexpr int k_block_period = 10;
+
+    ++_anim_counter;
+    if(_anim_counter >= k_block_period)
+    {
+        _anim_counter = 0;
+        _block_frame = (_block_frame + 1) % k_block_frames; // 0..2
+    }
+}
+
+void PlayerSprite::_update_block_success_animation()
+{
+    // Show the success frame briefly, then revert to Idle.
+    // If the player is still holding block, Player::update will call
+    // play_block() again and we’ll go back into the normal block loop.
+    constexpr int k_block_success_duration = 10; // frames
+
+    ++_block_success_timer;
+    if(_block_success_timer >= k_block_success_duration)
+    {
+        _block_success_timer = 0;
+        _state = AnimationState::Idle;
+        _anim_counter = 0;
+        _idle_frame = 0;
+    }
+}
+
 void PlayerSprite::_sync_sprite(const bn::fixed_point& pos)
 {
     if(!_body_sprite || !_eyes_sprite || !_top_sprite || !_bottom_sprite || !_hair_sprite)
@@ -276,7 +307,7 @@ void PlayerSprite::_sync_sprite(const bn::fixed_point& pos)
     // Apply camera if present
     attach_camera();
 
-    constexpr int k_frames_per_direction = 28;
+    constexpr int k_frames_per_direction = 32;
 
     // FacingDirection: 0=Down, 1=Right, 2=Up, 3=Left
     int dir = static_cast<int>(_direction);
@@ -316,6 +347,16 @@ void PlayerSprite::_sync_sprite(const bn::fixed_point& pos)
         case AnimationState::Death:
             // death: frames 24–27
             rel_frame = 24 + _death_frame;         // 24 + 0..3
+            break;
+        
+        case AnimationState::Block:
+            // block loop: frames 28–30
+            rel_frame = 28 + _block_frame; // 28 + 0..2
+            break;
+
+        case AnimationState::BlockSuccess:
+            // 4th block frame (31)
+            rel_frame = 31;
             break;
 
         case AnimationState::Idle:
