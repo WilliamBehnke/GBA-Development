@@ -87,7 +87,7 @@ int main()
     DamageNumbers::initialize(&text_gen, &camera);
 
     // 3) Create world + attach camera
-    WorldMap* world = new WorldMap();
+    WorldMap* world = new WorldMap(RoomId::MainRoom);
     world->set_camera(camera);
 
     // 4) Create player + attach same camera
@@ -95,25 +95,25 @@ int main()
     Player player(&player_sprite, bn::fixed_point(0, 0), world);
     player.attach_camera(camera);
 
-    EntityManager entity_manager(&player);
+    EntityManager entity_manager(&player, RoomId::MainRoom);
 
     EnemySprite enemy_sprite1(bn::fixed_point(-200, 0));
     Enemy enemy1(&enemy_sprite1, world);
     enemy1.attach_camera(camera);
     enemy1.set_target(&player);
-    entity_manager.add_enemy(&enemy1);
+    entity_manager.add_enemy(&enemy1, RoomId::MainRoom);
 
     EnemySprite enemy_sprite2(bn::fixed_point(0, -150));
     Enemy enemy2(&enemy_sprite2, world);
     enemy2.attach_camera(camera);
     enemy2.set_target(&player);
-    entity_manager.add_enemy(&enemy2);
+    entity_manager.add_enemy(&enemy2, RoomId::MainRoom);
 
     EnemySprite enemy_sprite3(bn::fixed_point(50, 200));
     Enemy enemy3(&enemy_sprite3, world);
     enemy3.attach_camera(camera);
     enemy3.set_target(&player);
-    entity_manager.add_enemy(&enemy3);
+    entity_manager.add_enemy(&enemy3, RoomId::MainRoom);
 
     while(true)
     {
@@ -142,6 +142,7 @@ int main()
 
             // --- Actually change the room ----------------------------------
             world->change_room(target_room);
+            entity_manager.set_current_room(target_room);
 
             // Teleport player to the door's spawn position
             player.update_sprite(spawn_pos, FacingDirection::Down);

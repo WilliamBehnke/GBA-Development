@@ -37,6 +37,8 @@ public:
     void set_position(bn::fixed_point pos) override;
     void set_z_order(int z) override;
 
+    void set_visible(bool is_visible) override;
+
 private:
     const CharacterAppearance& _appearance;
     bn::sprite_palette_ptr _palette;

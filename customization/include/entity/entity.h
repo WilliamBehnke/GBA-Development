@@ -56,6 +56,9 @@ public:
     // Does our attack box hit their hurt box?
     bool attack_hits(const Entity& other) const;
 
+    void set_active(bool active);
+    bool is_active() const { return _active; }
+
 protected:
     EntitySprite* _sprite;
     const WorldMap* _world_map;
@@ -66,6 +69,8 @@ protected:
 
     bool _show_health_bar = true;
     HealthBar _health_bar;
+
+    bool _active = true;
 
     Hitbox _hurt_box;
     Hitbox _attack_box;

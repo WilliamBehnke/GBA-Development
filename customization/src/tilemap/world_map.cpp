@@ -6,7 +6,7 @@
 #include "bn_regular_bg_map_cell_info.h"
 #include "bn_math.h"
 
-WorldMap::WorldMap()
+WorldMap::WorldMap(RoomId start_room) : _current_room(start_room)
 {
     _build_room(_current_room);
 }
@@ -62,6 +62,8 @@ void WorldMap::_build_room(RoomId room)
     // -----------------------------
     _fill_layer(data.layer1, _layer1_map);
 
+    _layer1_bg = bn::nullopt; // reset background layer 1
+
     bn::regular_bg_item bg_item1(
         bn::regular_bg_tiles_items::tiles,
         bn::bg_palette_items::palette,
@@ -74,6 +76,8 @@ void WorldMap::_build_room(RoomId room)
     // Layer 2: decorations / above
     // -----------------------------
     _fill_layer(data.layer2, _layer2_map);
+
+    _layer2_bg = bn::nullopt; // reset background layer 2
 
     bn::regular_bg_item bg_item2(
         bn::regular_bg_tiles_items::tiles,

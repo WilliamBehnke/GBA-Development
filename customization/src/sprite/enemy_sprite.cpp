@@ -28,6 +28,11 @@ void EnemySprite::set_z_order(int z)
     _sprite->set_z_order(10 * z);    // multiply by 10 to allow multi-layered sprites
 }
 
+void EnemySprite::set_visible(bool is_visible)
+{
+    _sprite->set_visible(is_visible);
+}
+
 void EnemySprite::attach_camera(const bn::camera_ptr& camera)
 {
     _camera = camera;

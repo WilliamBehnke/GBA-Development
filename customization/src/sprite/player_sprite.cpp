@@ -47,6 +47,20 @@ void PlayerSprite::set_z_order(int z)
     _hair_sprite->set_z_order(10 * z);
 }
 
+void PlayerSprite::set_visible(bool is_visible)
+{
+    if(!_body_sprite || !_eyes_sprite || !_top_sprite || !_bottom_sprite || !_hair_sprite)
+    {
+        return;
+    }
+
+    _body_sprite->set_visible(is_visible);
+    _eyes_sprite->set_visible(is_visible);
+    _bottom_sprite->set_visible(is_visible);
+    _top_sprite->set_visible(is_visible);
+    _hair_sprite->set_visible(is_visible);
+}
+
 void PlayerSprite::rebuild(const bn::fixed_point& pos)
 {
     _rebuild_sprites(pos);

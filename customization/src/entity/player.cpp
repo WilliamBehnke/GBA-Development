@@ -55,14 +55,6 @@ void Player::_handle_input()
     {
         _sprite->play_attack();
     } 
-    else if(bn::keypad::b_pressed())
-    {
-        _sprite->play_hurt();
-    }
-    else if(bn::keypad::select_pressed())
-    {
-        _sprite->play_death();
-    }
 
     _moving = (_move_dx != 0 || _move_dy != 0);
 

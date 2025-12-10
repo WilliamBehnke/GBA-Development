@@ -30,7 +30,7 @@ private:
     void _update_path_and_velocity(const bn::fixed_point& my_pos,
                                    const bn::fixed_point& target_pos);
 
-    Entity* _target            = nullptr;
+    Entity* _target = nullptr;
     FacingDirection _direction;
 
     bn::fixed_point _velocity;

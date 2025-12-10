@@ -17,7 +17,7 @@ class WorldMap
 {
 public:
     // Create world map from compiled tile/collision data
-    WorldMap();
+    WorldMap(RoomId start_room);
 
     // Attach a camera so the map scrolls with it
     void set_camera(const bn::camera_ptr& camera);
@@ -66,7 +66,7 @@ private:
     bn::vector<Door, MAX_DOORS_PER_ROOM> _doors;
 
     // Which room is currently loaded
-    RoomId _current_room = RoomId::MainRoom;
+    RoomId _current_room;
 
     // Camera (optional)
     bn::optional<bn::camera_ptr> _camera;

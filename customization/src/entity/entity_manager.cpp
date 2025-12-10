@@ -1,19 +1,120 @@
 #include "entity_manager.h"
 #include "hitbox.h"
 
-EntityManager::EntityManager(Player* player) : _player(player) {
+EntityManager::EntityManager(Player* player, RoomId room) :
+    _player(player), _current_room(room)
+{
 }
 
-void EntityManager::add_enemy(Enemy* enemy)
+EntityManager::RoomEnemies* EntityManager::_find_room_bucket(RoomId room)
 {
-    if(enemy && _enemies.size() < max_enemies)
+    for(int i = 0; i < _rooms.size(); ++i)
     {
-        _enemies.push_back(enemy);
+        if(_rooms[i].room == room)
+        {
+            return &_rooms[i];
+        }
+    }
+    return nullptr;
+}
+
+EntityManager::RoomEnemies& EntityManager::_ensure_room_bucket(RoomId room)
+{
+    if(RoomEnemies* existing = _find_room_bucket(room))
+    {
+        return *existing;
+    }
+
+    BN_ASSERT(_rooms.size() < max_rooms, "Too many rooms in EntityManager");
+
+    RoomEnemies bucket;
+    bucket.room = room;
+    bucket.enemies.clear();
+
+    _rooms.push_back(bucket);
+    return _rooms.back();
+}
+
+void EntityManager::set_current_room(RoomId room)
+{
+    if(_current_room == room)
+    {
+        return;
+    }
+
+    RoomEnemies& cur_bucket = _ensure_room_bucket(_current_room);
+    cur_bucket.enemies = _enemies;   // save pointer list for that room
+
+    for(Enemy* enemy : cur_bucket.enemies)
+    {
+        if(enemy)
+        {
+            enemy->set_active(false);
+        }
+    }
+
+    // 2) Switch current room id
+    _current_room = room;
+
+    // 3) Load enemies for the new room
+    RoomEnemies& new_bucket = _ensure_room_bucket(room);
+    _enemies = new_bucket.enemies;
+
+    // 4) Activate enemies in the new room so they appear and run AI
+    for(Enemy* enemy : _enemies)
+    {
+        if(enemy)
+        {
+            enemy->set_active(true);
+        }
+    }
+}
+
+void EntityManager::add_enemy(Enemy* enemy, RoomId room)
+{
+    if(!enemy)
+    {
+        return;
+    }
+
+    // Get or create the bucket for the specific room
+    RoomEnemies& bucket = _ensure_room_bucket(room);
+
+    // Enforce room-local capacity
+    if(bucket.enemies.size() >= max_enemies)
+    {
+        return;
+    }
+
+    // Add to that room's persistent list
+    bucket.enemies.push_back(enemy);
+
+    // If this is also the *current* room, mirror into the active list
+    if(_current_room == room)
+    {
+        if(_enemies.size() < max_enemies)
+        {
+            _enemies.push_back(enemy);
+            enemy->set_active(true);
+        }
+        else
+        {
+            enemy->set_active(false);
+        }
+    }
+    else
+    {
+        // Not the current room; keep it inactive for now
+        enemy->set_active(false);
     }
 }
 
 void EntityManager::clear_enemies()
 {
+    // Clear only the current room's enemies
+    RoomEnemies& bucket = _ensure_room_bucket(_current_room);
+    bucket.enemies.clear();
+
     _enemies.clear();
 }
 
@@ -85,7 +186,6 @@ void EntityManager::_handle_enemy_attacks_player()
         }
     });
 }
-
 
 void EntityManager::_handle_bumps()
 {

@@ -19,6 +19,21 @@ Entity::Entity(EntitySprite* sprite,
 {
 }
 
+void Entity::set_active(bool active)
+{
+    _active = active;
+
+    if(!active) 
+    {
+        _health_bar.hide();
+    }
+
+    if(_sprite)
+    {
+        _sprite->set_visible(active);
+    }
+}
+
 bn::fixed_point Entity::_clamp_to_world(const bn::fixed_point& candidate) const
 {
     if(!_world_map)

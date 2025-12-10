@@ -43,6 +43,8 @@ public:
 
     bool is_locked() const;
 
+    virtual void set_visible(bool is_visible) = 0;
+
 protected:
     // Animation
     AnimationState _state = AnimationState::Idle;
